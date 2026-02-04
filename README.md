@@ -26,3 +26,20 @@ Close and re-open your terminal window for the installation to fully take effect
 
 vérifier l'instalation en fermant et ouvrant un second terminal : conda --version
 si conda 25.11.1 -> ok 
+
+
+
+
+
+
+
+
+```bibtex
+@article{Bochkovskii2024:arxiv,
+  author     = {Aleksei Bochkovskii and Ama\"{e}l Delaunoy and Hugo Germain and Marcel Santos and
+               Yichao Zhou and Stephan R. Richter and Vladlen Koltun}
+  title      = {Depth Pro: Sharp Monocular Metric Depth in Less Than a Second},
+  journal    = {arXiv},
+  year       = {2024},
+  url        = {https://arxiv.org/abs/2410.02073},
+}
