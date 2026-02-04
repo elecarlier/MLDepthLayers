@@ -1,16 +1,29 @@
-# Fichiers Python temporaires
-*.pyc
+# Python
 __pycache__/
+*.pyc
 
-# Dossiers d'environnements
-Midas/
-ml-Depth-Pro/
+# macOS
+.DS_Store
+__MACOSX/
 
-# Fichiers volumineux inutiles
-*.tiff
-*.png
-*.jpg
-*.h5
+# ML models (lourds)
+checkpoints/
 *.pt
+*.pth
+*.h5
+
+# Outputs / résultats générés
+Output/
+output/
+output*
+Input*
+Output_Done*
+input_Done*
+
+# Archives
 *.zip
 *.tar.gz
+
+# Environnements / builds
+*.egg-info/
+.dist-info/
