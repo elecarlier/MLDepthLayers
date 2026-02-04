@@ -29,9 +29,76 @@ si conda 25.11.1 -> ok
 
 
 
+2) Utilisation de ml-deph-pro
+
+Il faut avoir installé Anaconda/miniconda au préalable (voir étape 1)
+- Préparer un environnment python isolé
+conda create -n depth-pro python=3.10
+conda activate depth-pro
+
+Ml-Depth-Pro-Env.yaml est l’environnement Conda.
+
+pyproject.toml est pour le package Python.
+
+get_pretrained_models.sh télécharge les modèles.
 
 
+- Installer les dépendances 
 
+
+# 2. Créer l'environnement conda
+conda env create -f environment.yml
+
+# 3. Activer l'environnement
+conda activate ml-depth-pro
+
+
+Depuis la racine du projet ml-Depth-Pro/, tape :
+
+pip install -e .
+
+il va installer le package défini par le pyproject.toml
+
+Vérification: Après l’installation :
+
+python -c "import depth_pro; print(depth_pro.__name__)"
+
+
+Si ça imprime depth_pro → ✅ tout est OK
+
+Télécharger le modèle pré-entrainé :
+
+
+sh get_pretrained_models.sh
+
+ Télécharger le checkpoint manuellement via le repo d'origin Apple
+
+mkdir -p checkpoints
+
+
+Vérification : 
+
+
+Ensuite tu peux lancer le script principal en remplacant évidement par les bonnes valeurs:
+
+
+python run.py -i input/_U8A2060-Modifie.png -o Output/ -s
+
+
+| Argument               | Usage                                               |
+| ---------------------- | --------------------------------------------------- |
+| `-i` / `--image-path`  | Chemin vers l’image ou le dossier d’images d’entrée |
+| `-o` / `--output-path` | Dossier où sauver les résultats                     |
+| `--skip-display`       | Ne pas afficher les images avec matplotlib          |
+| `-v` / `--verbose`     | Afficher les logs                                   |
+| `-s` / `--side`        | Générer des images côte-à-côte (RGB + profondeur)   |
+
+
+Les images traitées sont dans Output/
+
+Les fichiers *_map.jpg et *_lkg.jpg sont créés avec la profondeur estimée
+
+Tout est reproductible sur une machine vierge, sans sudo ni wget
 
 
 ```bibtex
