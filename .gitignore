@@ -1,0 +1,16 @@
+# Fichiers Python temporaires
+*.pyc
+__pycache__/
+
+# Dossiers d'environnements
+Midas/
+ml-Depth-Pro/
+
+# Fichiers volumineux inutiles
+*.tiff
+*.png
+*.jpg
+*.h5
+*.pt
+*.zip
+*.tar.gz
