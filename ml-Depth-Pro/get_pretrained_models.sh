@@ -1,24 +1,52 @@
 #!/usr/bin/env bash
 #
+# Apple Depth Pro – téléchargement du checkpoint
+#
 # For licensing see accompanying LICENSE file.
-# Copyright (C) 2024 Apple Inc. All Rights Reserved.
+# Copyright (C) 2024 Apple Inc.
 #
 
+set -e
+
+CHECKPOINT_DIR="checkpoints"
+CHECKPOINT_FILE="$CHECKPOINT_DIR/depth_pro.pt"
+CHECKPOINT_URL="https://ml-site.cdn-apple.com/models/depth-pro/depth_pro.pt"
 
 # Crée le dossier checkpoints si nécessaire
-mkdir -p checkpoints
+mkdir -p "$CHECKPOINT_DIR"
 
-# Vérifie si le checkpoint existe déjà
-CHECKPOINT_FILE="checkpoints/depth_pro.pt"
-
+# Si le checkpoint existe déjà, on sort
 if [ -f "$CHECKPOINT_FILE" ]; then
-    echo "✅ Le checkpoint existe déjà : $CHECKPOINT_FILE"
+    echo "✅ Checkpoint déjà présent : $CHECKPOINT_FILE"
     exit 0
 fi
 
-# Message pour l'utilisateur
-echo "⚠️  Le checkpoint Depth Pro n'est pas présent."
-echo "1️⃣  Ouvre ce lien dans ton navigateur pour télécharger le modèle :"
-echo "    https://ml-site.cdn-apple.com/models/depth-pro/depth_pro.pt"
-echo "2️⃣  Place le fichier téléchargé dans le dossier : checkpoints/"
-echo "3️⃣  Ensuite, relance le script ou lance le programme Python comme d'habitude :"
+echo "📦 Checkpoint Depth Pro introuvable."
+
+# Cas 1 : wget disponible
+if command -v wget >/dev/null 2>&1; then
+    echo "⬇️  Téléchargement avec wget…"
+    wget "$CHECKPOINT_URL" -O "$CHECKPOINT_FILE"
+    echo "✅ Téléchargement terminé."
+    exit 0
+fi
+
+# Cas 2 : curl disponible
+if command -v curl >/dev/null 2>&1; then
+    echo "⬇️  Téléchargement avec curl…"
+    curl -L "$CHECKPOINT_URL" -o "$CHECKPOINT_FILE"
+    echo "✅ Téléchargement terminé."
+    exit 0
+fi
+
+# Cas 3 : aucun outil disponible → instructions manuelles
+echo "⚠️  Aucun outil de téléchargement automatique trouvé (wget / curl)."
+echo
+echo "👉 Téléchargement manuel requis :"
+echo "1️⃣  Ouvre ce lien dans ton navigateur :"
+echo "    $CHECKPOINT_URL"
+echo "2️⃣  Télécharge le fichier depth_pro.pt"
+echo "3️⃣  Place-le dans le dossier : $CHECKPOINT_DIR/"
+echo
+echo "Puis relance ton programme normalement."
+exit 1
