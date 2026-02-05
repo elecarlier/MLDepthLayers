@@ -1,22 +1,35 @@
 # lenticular_photgraphy
 
 
-Récuperer les projets. 
+Ce dépôt regroupe plusieurs projets liés à la photographie lenticulaire.  
+Il inclut notamment **ml-Depth-Pro**, utilisé pour générer des cartes de profondeur à partir d’images.
+
+---
+
+## 1. Récupérer le projet
+
+Rendez-vous sur le dépôt GitHub :
+
+👉 https://github.com/elecarlier/lenticular_photgraphy
+
+### Option A — Vous avez un compte GitHub (recommandé)
+
+Dans un terminal :
+
+```bash
+git clone https://github.com/elecarlier/lenticular_photgraphy.git
+cd lenticular_photgraphy
+```
 
 
-Rendez-vous sur ce lien : https://github.com/elecarlier/lenticular_photgraphy
 
+### Option B — Sans compte GitHub
 
-Si vous possédez un compte github : 
+Cliquez sur le bouton vert <> Code
+Sélectionnez Download ZIP
+Décompressez l’archive dans le dossier de votre choix
 
-git clone .....
-
-Si vous n'en possédez pas : 
-Vous trouverez un bouton vert <> Code : appuyez dessus dessus et téléchargez le fichier zip
-Unzipez le dans le dossier de votre choix.
-
-
-
+## 2. Contenu du dépot
 Vous venez de télécharger les fichiers sources.  
 A l'intérieur, vous trouverez 3 dossiers différents:
 
@@ -26,14 +39,18 @@ Midas-Master_3.1 :
 
 Nous allons commencer par l'instalaion de ces différents projets.
 
+## 3. Pré-requis
+
 Pour le bon fonctionnement de ces différents projets, l'installation de Anaconda/miniconda est nécessaire. Si cela est déjà installé sur votre machine, vous pouvez skipper la première étape. 
 
 Comment savoir si Anaconda est déjà installé? 
 
-Tapez dans votre terminal: 
-    conda --version
-
-si conda 25.11.1 (ou similaire) -> déjà installé
+Tapez dans votre terminal:
+```bash
+conda --version
+```
+Si une version s’affiche (ex. conda 25.11.1) → ✅ déjà installé
+Sinon → passez à l’étape suivante.
 
 
 Lors de l'instalation des différents projets, nous devons nous trouver à la racine du projet en question.
@@ -41,7 +58,7 @@ Lors de l'instalation des différents projets, nous devons nous trouver à la ra
 
 Nous allons commencer par l'installation de ml-depth-pro.
 
-Installation de ml-Depth-Pro
+## 4. Installation de ml-Depth-Pro
 
 Ouvrez un terminal et rendez-vous dans la racine du dossier ml-depth-pro.
 
@@ -58,14 +75,18 @@ Vérifier le checksum SHA256 si nécessaire (https://repo.anaconda.com/archive/)
 
 
 Dans un terminal : 
-    curl -O https://repo.anaconda.com/archive/Anaconda3-2025.12-2-MacOSX-arm64.sh
-    bash ~/Downloads/Anaconda3-2025.12-2-MacOSX-arm64.sh
 
-Note: les versions peuvent changer; dans ce cas le nom sera différent et il vous faudra adapter votre commande.
+```bash
+curl -O https://repo.anaconda.com/archive/Anaconda3-2025.12-2-MacOSX-arm64.sh
+bash Anaconda3-2025.12-2-MacOSX-arm64.sh
+```
+
+Note: Le nom du fichier peut changer avec le temps.
+Adaptez la commande si nécessaire.
 
 L'installation démarre et des instructions apparaissent à l'écran, suivez les. 
 
-
+Instructions pendant l’installation
     Appuyez sur Return pour continuer et lire les Terms of Service : TOS Anaconda
 
     Tapez yes pour accepter les termes.
@@ -86,26 +107,31 @@ Une fois terminé, le message suivant apparaît :
 Fermez et rouvrez le terminal pour que l’installation soit prise en compte.
 
 Vérification de l'instalation 
-    conda --version
+```bash
+conda --version
+```
 
-si conda 25.11.1 (ou similaire) -> ok 
+Si une version s’affiche → ✅ installation réussie
 
 
-2) Utilisation de ml-deph-pro
+2) Installation de ml-deph-pro
 
 Assurez-vous d’avoir installé Anaconda/miniconda (voir étape 1).
+
+Placez-vous dans le dossier du projet 
 
 a) Créer un environnement Python isolé
 
     conda create -n depth-pro python=3.10
     conda activate depth-pro
 
-depth-pro étant un nom choisi sans importance
+ml-depth-pro est un nom choisi, vous pouvez en utiliser un autre si besoin.
 
 b) Installer les dépendances 
 
-Depuis la racine du projet ml-Depth-Pro/ :
+Toujours depuis la racine de ml-Depth-Pro/ :
 
+```bash
 # Créer l'environnement Conda
 conda env create -f environment.yml
 
@@ -114,16 +140,24 @@ conda activate ml-depth-pro
 
 # Installer le package Python défini par pyproject.toml
 pip install -e .
+```
+Cela installe :
 
+l’environnement Conda
+les dépendances Python
+le package depth_pro via pyproject.toml
 
 Vérification: 
-
+```bash
 python -c "import depth_pro; print(depth_pro.__name__)"
+```
 
-Si ça imprime depth_pro → ✅ tout est OK
+Si cela affiche : depth_pro → ✅ tout est OK
 
-Note : Si vous encontrez une erreur du type "No module named 'depth_pro'", essayez de réactiver l'environnement
-
+Note : En cas d’erreur No module named depth_pro, vérifiez que l’environnement est bien activé : essayez de réactiver l'environnement avec
+```bash
+conda activate ml-depth-pro
+```
 
 c) Télécharger le modèle pré-entrainé 
 
@@ -139,13 +173,17 @@ https://ml-site.cdn-apple.com/models/depth-pro/depth_pro.pt"
 Place le fichier téléchargé dans le dossier : checkpoints/"
 
 
-Vérification : ls checkpoints/
+Vérification : 
+```bash 
+ls checkpoints/
+```
 
-Vous devriez voir depth_pro.pt
+Vous devriez voir un fichier depth_pro.pt
+
 
 L'installation est terminée. Vous pouvez lancer l’inférence sur une image avec le script run.py.
 
-Exemple:
+Exemple simple:
 
 python run.py -i input/_U8A2060-Modifie.png -o Output/ -s
 
