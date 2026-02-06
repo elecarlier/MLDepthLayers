@@ -27,7 +27,7 @@ def inspect_mask(mask, name="mask"):
 
 masks_dir = "input/masks"
 #key -> le nom du fichier 
-# value -> tableau numpy 2D avec valeurs 0-1
+#value -> tableau numpy 2D avec valeurs 0-1
 
 masks = {}
 
