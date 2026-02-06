@@ -96,6 +96,8 @@ def run(args):
         prediction = model.infer(transform(image), f_px=f_px)
 
         # Extract the depth and focal length.
+
+        #depth = carte de profondeur globale
         depth = prediction["depth"].detach().cpu().numpy().squeeze()
         if f_px is not None:
             LOGGER.debug(f"Focal length (from exif): {f_px:0.2f}")
