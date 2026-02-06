@@ -156,7 +156,7 @@ def run(args):
             lookingGlass_output_file = str(output_file) + "_lkg.jpg"           
             Side_by_side = np.concatenate((image, right_side), axis=1)
             PIL.Image.fromarray(Side_by_side).save(lookingGlass_output_file, format="JPEG", quality=90)
-            #    plt.figure(figsize=(12, 8))
+            # plt.figure(figsize=(12, 8))
             # plt.imshow(Side_by_side)
             # plt.axis('off')
             # plt.title("Side-by-side Image + Depth")

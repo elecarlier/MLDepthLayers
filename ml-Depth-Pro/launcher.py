@@ -7,24 +7,35 @@ Traite toutes les images dans input/layers et sauvegarde les résultats dans out
 import subprocess
 from pathlib import Path
 
-# Dossiers
+
 input_folder = Path("input/layers")
 output_folder = Path("output/depth_maps_layers")
 output_folder.mkdir(parents=True, exist_ok=True)
 
-# Liste toutes les images dans le dossier
 image_paths = list(input_folder.glob("*.*"))  # JPG, PNG, etc.
 
 print(f"Found {len(image_paths)} images in {input_folder}")
 
-# Parcours de toutes les images
+image_ori_path = Path("input/images")
+
+
 for image_path in image_paths:
     print(f"Processing {image_path.name} ...")
-    # Appel de run.py via subprocess
     subprocess.run([
         "python", "run.py",
-        "-i", str(image_path),            # image à traiter
-        "-o", str(output_folder),         # dossier de sortie
-        "--skip-display"                  # ne pas afficher les fenêtres matplotlib
+        "-i", str(image_path),            
+        "-o", str(output_folder),         
+        "--skip-display"                  
     ])
+
+print("All layers processed!")
+
+print(f"Processing global {image_ori_path.name} ...")
+subprocess.run([
+    "python", "run.py",
+    "-i", str(image_ori_path),            
+    "-o", str(output_folder),         
+    "--skip-display"                  
+])
+
 print("✅ All images processed!")
