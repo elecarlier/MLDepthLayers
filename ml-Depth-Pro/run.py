@@ -30,32 +30,38 @@ def get_torch_device() -> torch.device:
         device = torch.device("mps")
     return device
 
-def create_side_by_side(image, depth, grayscale):
-    """
-    Take an RGB image and depth map and place them side by side. This includes a proper normalization of the depth map
-    for better visibility.
+# def create_side_by_side(image, depth, grayscale):
+#     """
+#     Take an RGB image and depth map and place them side by side. This includes a proper normalization of the depth map
+#     for better visibility.
 
-    Args:
-        image: the RGB image
-        depth: the depth map
-        grayscale: use a grayscale colormap?
+#     Args:
+#         image: the RGB image
+#         depth: the depth map
+#         grayscale: use a grayscale colormap?
 
-    Returns:
-        the image and depth map place side by side
-    """
-    depth_min = depth.min()
-    depth_max = depth.max()
-    normalized_depth = 255 * (depth - depth_min) / (depth_max - depth_min)
-    normalized_depth *= 3
+#     Returns:
+#         the image and depth map place side by side
+#     """
+#     depth_min = depth.min()
+#     depth_max = depth.max()
+#     normalized_depth = 255 * (depth - depth_min) / (depth_max - depth_min)
+#     normalized_depth *= 3
 
-    right_side = np.repeat(np.expand_dims(normalized_depth, 2), 3, axis=2) / 3
-    if not grayscale:
-        right_side = cv2.applyColorMap(np.uint8(right_side), cv2.COLORMAP_INFERNO)
+#     right_side = np.repeat(np.expand_dims(normalized_depth, 2), 3, axis=2) / 3
+#     if not grayscale:
+#         right_side = cv2.applyColorMap(np.uint8(right_side), cv2.COLORMAP_INFERNO)
 
-    if image is None:
-        return right_side
-    else:
-        return np.concatenate((image, right_side), axis=1)
+#     print("=== RIGHT_SIDE ===")
+#     print("Shape:", right_side.shape)
+#     print("Dtype:", right_side.dtype)
+#     print("Min/Max:", right_side.min(), right_side.max())
+
+
+#     if image is None:
+#         return right_side
+#     else:
+#         return np.concatenate((image, right_side), axis=1)
 
 
 def run(args):
@@ -88,6 +94,15 @@ def run(args):
         try:
             LOGGER.info(f"Loading image {image_path} ...")
             image, _, f_px = load_rgb(image_path)
+            print("=== IMAGE CHARGEE ===")
+            print("Shape:", image.shape)         # Doit être (H, W, 3)
+            print("Dtype:", image.dtype)         # Doit être uint8
+            print("Min/Max:", image.min(), image.max())  # Doit être 0–255 si uint8
+            # if image.shape[2] == 4:  # RGBA
+            #     alpha = image[:, :, 3:] / 255.0
+            #     image = image[:, :, :3] * alpha + 255 * (1 - alpha)  # fusion sur fond blanc
+            #     image = image.astype(np.uint8)
+
         except Exception as e:
             LOGGER.error(str(e))
             continue
@@ -141,7 +156,11 @@ def run(args):
             lookingGlass_output_file = str(output_file) + "_lkg.jpg"           
             Side_by_side = np.concatenate((image, right_side), axis=1)
             PIL.Image.fromarray(Side_by_side).save(lookingGlass_output_file, format="JPEG", quality=90)
-           
+            #    plt.figure(figsize=(12, 8))
+            # plt.imshow(Side_by_side)
+            # plt.axis('off')
+            # plt.title("Side-by-side Image + Depth")
+            # plt.show()
             
         # Display the image and estimated depth map.
         if not args.skip_display:
