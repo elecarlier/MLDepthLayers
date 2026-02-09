@@ -15,12 +15,24 @@ from PIL import Image
 
 # img_path = Path("/Users/eleonore/MLDepthLayers/ml-Depth-Pro/input/images/Le Syrphe Simplifie LS.tif")
 
-img_path = Path("/Users/eleonore/MLDepthLayers/ml-Depth-Pro/output/depth_maps_layers/layers_stack.tif")
+#img_path = Path("/Users/eleonore/MLDepthLayers/ml-Depth-Pro/output/depth_maps_layers/layers_stack.tif")
 
 # img = tiff.imread("/Users/eleonore/MLDepthLayers/ml-Depth-Pro/input/images/Le Syrphe Simplifie LS.tif")
 # print(img.shape, img.dtype)
 
-with tiff.TiffFile(img_path) as tif:
+
+final_folder = Path("/Users/eleonore/MLDepthLayers/ml-Depth-Pro/output/final")
+
+tiff_files = sorted(final_folder.glob("*.tif"))
+
+if not tiff_files:
+    raise RuntimeError(f"Aucun TIFF trouvé dans {final_folder}")
+
+tiff_path = tiff_files[0]
+print(f"Affichage du TIFF : {tiff_path}")
+
+
+with tiff.TiffFile(tiff_path) as tif:
     print("Nombre total de pages :", len(tif.pages))
     print("Nombre de séries :", len(tif.series))
     for i, page in enumerate(tif.pages):
