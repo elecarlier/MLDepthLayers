@@ -71,22 +71,6 @@ def run(args):
             image, _, f_px = load_rgb(image_path)
             #image en <f4 (float)
             img_float32 = mpimg.imread(image_path)
-            
-            # plt.imshow(img)       # imshow gère les couleurs automatiquement
-            # plt.axis('off')       # Optionnel : pour ne pas afficher les axes
-            # plt.show()
-            # plt.imshow(image)
-            # plt.axis('off')
-            # plt.show()
-
-            # print("=== IMAGE CHARGEE ===")
-            # print("Shape:", image.shape)         # Doit être (H, W, 3)
-            # print("Dtype:", image.dtype)         # Doit être uint8
-            # print("Min/Max:", image.min(), image.max())  # Doit être 0–255 si uint8
-            # # if image.shape[2] == 4:  # RGBA
-            # #     alpha = image[:, :, 3:] / 255.0
-            # #     image = image[:, :, :3] * alpha + 255 * (1 - alpha)  # fusion sur fond blanc
-            # #     image = image.astype(np.uint8)
 
         except Exception as e:
             LOGGER.error(str(e))
@@ -152,7 +136,6 @@ def run(args):
                     img_float32_uint8, right_side_array.shape, preserve_range=True
                 ).astype(np.uint8)
 
-            # Concatenation côte à côte
             # Si img_float32_uint8 a 4 canaux (RGBA), on prend seulement les 3 premiers (RGB)
             if img_float32_uint8.shape[2] == 4:
                 img_float32_uint8 = img_float32_uint8[..., :3]
@@ -161,6 +144,7 @@ def run(args):
             if right_side_array.shape[2] == 4:
                 right_side_array = right_side_array[..., :3]
 
+
             side_by_side = np.concatenate((img_float32_uint8, right_side_array), axis=1)
 
             plt.imshow(side_by_side)
@@ -168,12 +152,6 @@ def run(args):
             plt.show()
             PIL.Image.fromarray(side_by_side).save(lookingGlass_output_file, format="JPEG", quality=90)
             
-            
-            # img = mpimg.imread(image_path)
-            # plt.imshow(img)       # imshow gère les couleurs automatiquement
-            # plt.axis('off')       # Optionnel : pour ne pas afficher les axes
-            # plt.show()
-
             
         # Display the image and estimated depth map.
         if not args.skip_display:
