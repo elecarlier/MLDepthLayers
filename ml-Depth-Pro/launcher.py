@@ -14,6 +14,27 @@ from PIL import Image
 
 
 
+
+def tiff_to_pngs(tiff_path, output_folder):
+    output_folder.mkdir(parents=True, exist_ok=True)
+
+    with tiff.TiffFile(tiff_path) as tif:
+        for i, page in enumerate(tif.pages):
+            img = page.asarray()
+            if img.dtype.kind == "f":
+                img = np.clip(img, 0, 255).astype(np.uint8) if img.max() > 1 else (img*255).astype(np.uint8)
+            elif img.dtype == np.uint16:
+                img = (img/256).astype(np.uint8)
+            Image.fromarray(img).save(output_folder / f"page_{i:03d}.png")
+
+    print(f"✅ {len(tif.pages)} pages extracted to {output_folder}")
+
+# Usage
+tiff_to_pngs(Path("/Users/eleonore/MLDepthLayers/ml-Depth-Pro/input/images/tiff/layers_stack.tif"
+), Path("input/layers_from_tiff"))
+
+
+
 input_folder = Path("input/layers")
 output_folder = Path("output/depth_maps_layers")
 output_folder.mkdir(parents=True, exist_ok=True)
