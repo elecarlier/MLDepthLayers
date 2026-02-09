@@ -6,6 +6,8 @@ dependencies:
   - python=3.10
   - numpy=1.26
   - pip
+  - tifffile
+  - imagecodecs
   - pip:
       - certifi==2024.8.30
       - charset-normalizer==3.4.0
