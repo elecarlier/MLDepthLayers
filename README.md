@@ -1,10 +1,32 @@
-# lenticular_photgraphy
+⚠️ **Attention : ce dépôt contient plusieurs licences.**
+
+## 1. ML Depth Pro (Apple)
+
+Dans le dossier `ml-depth-pro`, ce projet contient une version modifiée de **Apple ML Depth Pro**.  
+- Copyright © 2024 Apple Inc., All Rights Reserved  
+- Modifications apportées par **Eléonore Carlier**  
+
+**Conditions légales :**  
+- Le code Apple doit rester sous licence Apple, avec le copyright et le disclaimer intacts.  
+- Ne pas utiliser le logo ou nom Apple pour promouvoir ce projet.  
+
+## 2. Bibliothèques tierces
+
+Ce projet utilise également plusieurs composants sous **Apache License 2.0** :  
+- **timm** (PyTorch Image Models) – Ross Wightman  
+- **DINOv2** – Facebook Research  
+
+Pour les licences et notices complètes, voir [ACKNOWLEDGEMENTS.md](ml-depth-pro/ACKNOWLEDGEMENTS.md).  
+
+## 3. Description générale
+
+Ce dépôt regroupe plusieurs projets liés à la **photographie lenticulaire** et au traitement d’images.  
+Il inclut notamment `ml-depth-pro`, utilisé pour générer des cartes de profondeur à partir d’images.
 
 
-Ce dépôt regroupe plusieurs projets liés à la photographie lenticulaire.  
-Il inclut notamment **ml-Depth-Pro**, utilisé pour générer des cartes de profondeur à partir d’images.
 
----
+
+
 
 ## 1. Récupérer le projet
 
