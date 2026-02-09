@@ -1,20 +1,37 @@
 #!/usr/bin/env python3
 """
-Batch runner pour générer les cartes de profondeur avec run.py
-Traite toutes les images dans input/layers et sauvegarde les résultats dans output/depth_maps_layers
+Launcher complet pour générer des cartes de profondeur.
+
+Deux modes :
+1️⃣ L'utilisateur fournit un TIFF multipage → chaque page devient un PNG dans `layers_folder`.
+2️⃣ L'utilisateur fournit déjà un dossier de calques PNG/JPG → utilisé tel quel.
+
+Ensuite :
+- Chaque calque est traité par run.py
+- Les depth maps générées sont regroupées dans un TIFF multipage final
 """
+
 
 import subprocess
 from pathlib import Path
-import os
-
 import tifffile as tiff
-import numpy as np
 from PIL import Image
+import numpy as np
+
+
+# input_tiff = Path("input/images/tiff/")                 # TIFF multipage si fourni
+
+
+layers_folder = Path("input/layers_from_tiff")          # calques extraits si TIFF
+existing_layers_folder = Path("input/layers")           # calques existants
+output_folder = Path("output/depth_maps_layers")
+final_folder = Path("output/final")
+output_folder.mkdir(parents=True, exist_ok=True)
+final_folder.mkdir(parents=True, exist_ok=True)
 
 
 
-
+#Fonction de conversionn TFF -> PNG
 def tiff_to_pngs(tiff_path, output_folder):
     output_folder.mkdir(parents=True, exist_ok=True)
 
@@ -29,74 +46,160 @@ def tiff_to_pngs(tiff_path, output_folder):
 
     print(f"✅ {len(tif.pages)} pages extracted to {output_folder}")
 
-# Usage
-tiff_to_pngs(Path("/Users/eleonore/MLDepthLayers/ml-Depth-Pro/input/images/tiff/layers_stack.tif"
-), Path("input/layers_from_tiff"))
+images_folder = Path("input/images")
+image_files = sorted(images_folder.glob("*.*"))
+if not image_files:
+    raise RuntimeError("Aucun fichier trouvé dans input/images")
+
+# On prend le premier fichier trouvé
+global_image = image_files[0]
+
+# Detection du mode
+if global_image.suffix.lower() in [".tif", ".tiff"]:
+    print(f"TIFF détecté : {global_image}, extraction des pages...")
+    tiff_to_pngs(global_image, layers_folder)
+    processing_folder = layers_folder
+
+# Mode photo globale PNG/JPG
+else:
+    print(f"Photo globale détectée : {global_image}")
+    # Les calques existants + la photo globale
+    processing_folder = existing_layers_folder
+    extra_images = [global_image]
 
 
+image_paths = sorted(processing_folder.glob("*.*"))
+if global_image.suffix.lower() not in [".tif", ".tiff"]:
+    image_paths += extra_images  # ajoute la photo globale aux calques
 
-input_folder = Path("input/layers")
-output_folder = Path("output/depth_maps_layers")
-output_folder.mkdir(parents=True, exist_ok=True)
+if not image_paths:
+    raise RuntimeError("Aucun fichier à traiter !")
 
-image_paths = list(input_folder.glob("*.*"))  # JPG, PNG, etc.
+print(f"Found {len(image_paths)} images à traiter.")
 
+# ---------------------------
+#Traitement avec run.py
+# ---------------------------
 
-
-
-print(f"Found {len(image_paths)} images in {input_folder}")
-
-image_ori_path = Path("input/images")
-
-src_path = str(Path(__file__).parent / "src")
-
-def load_image(path):
-    img = Image.open(path)
-    return np.array(img)
-
+src_path = str(Path(__file__).parent / "src")  # si run.py nécessite un chemin src
 
 for image_path in image_paths:
     print(f"Processing {image_path.name} ...")
     subprocess.run([
         "python", "run.py",
-        "-i", str(image_path),            
-        "-o", str(output_folder),         
-        "--skip-display"                  
+        "-i", str(image_path),
+        "-o", str(output_folder),
+        "--skip-display"
     ])
 
-print("All layers processed!")
+print("✅ Toutes les layers traitées !")
 
-print(f"Processing global {image_ori_path.name} ...")
-subprocess.run([
-    "python", "run.py",
-    "-i", str(image_ori_path),            
-    "-o", str(output_folder),         
-    "--skip-display"                  
-])
-
-print("✅ All images processed!")
-
+# ---------------------------
+# Création TIFF multipage final
+# ---------------------------
 
 def load_image(path):
     return np.array(Image.open(path))
 
-layer_dir = Path("output/depth_maps_layers")
-output_tiff = Path("output/final") / "layers_stack.tif"
-
-layer_images = sorted(layer_dir.glob("*.jpg"))
+# Récupérer toutes les images générées
+layer_images = sorted(output_folder.glob("*.*"))
+layer_images = [p for p in layer_images if p.suffix.lower() in [".png", ".jpg", ".jpeg"]]
 
 if not layer_images:
-    raise RuntimeError(" No layer images found in output directory")
+    raise RuntimeError("❌ Aucun fichier depth map trouvé pour créer le TIFF multipage")
+
 
 pages = [load_image(p) for p in layer_images]
-
 photometric = "rgb" if pages[0].ndim == 3 else "minisblack"
 
+output_tiff = final_folder / "layers_stack.tif"
 tiff.imwrite(
     output_tiff,
     pages,
-    photometric=photometric
+    photometric=photometric,
+    bigtiff=True  # ✅ permet de dépasser la limite de 4 Go
 )
 
-print(f"✅ TIFF multipage créé : {output_tiff}")
+print(f"✅ TIFF multipage final créé : {output_tiff}")
+
+
+# pages = [load_image(p) for p in layer_images]
+# photometric = "rgb" if pages[0].ndim == 3 else "minisblack"
+
+# output_tiff = final_folder / "layers_stack.tif"
+# tiff.imwrite(output_tiff, pages, photometric=photometric)
+
+# print(f"✅ TIFF multipage final créé : {output_tiff}")
+
+
+
+
+
+
+
+
+# input_folder = Path("input/layers")
+# output_folder = Path("output/depth_maps_layers")
+# output_folder.mkdir(parents=True, exist_ok=True)
+
+# image_paths = list(input_folder.glob("*.*"))  # JPG, PNG, etc.
+
+
+
+
+# print(f"Found {len(image_paths)} images in {input_folder}")
+
+# image_ori_path = Path("input/images")
+
+# src_path = str(Path(__file__).parent / "src")
+
+# def load_image(path):
+#     img = Image.open(path)
+#     return np.array(img)
+
+
+# for image_path in image_paths:
+#     print(f"Processing {image_path.name} ...")
+#     subprocess.run([
+#         "python", "run.py",
+#         "-i", str(image_path),            
+#         "-o", str(output_folder),         
+#         "--skip-display"                  
+#     ])
+
+# print("All layers processed!")
+
+# print(f"Processing global {image_ori_path.name} ...")
+# subprocess.run([
+#     "python", "run.py",
+#     "-i", str(image_ori_path),            
+#     "-o", str(output_folder),         
+#     "--skip-display"                  
+# ])
+
+# print("✅ All images processed!")
+
+
+# def load_image(path):
+#     return np.array(Image.open(path))
+
+# layer_dir = Path("output/depth_maps_layers")
+# output_tiff = Path("output/final") / "layers_stack.tif"
+
+# layer_images = sorted(layer_dir.glob("*.jpg"))
+
+# if not layer_images:
+#     raise RuntimeError(" No layer images found in output directory")
+
+# pages = [load_image(p) for p in layer_images]
+
+# photometric = "rgb" if pages[0].ndim == 3 else "minisblack"
+
+# tiff.imwrite(
+#     output_tiff,
+#     pages,
+#     photometric=photometric
+# )
+
+# print(f"✅ TIFF multipage créé : {output_tiff}")
 
