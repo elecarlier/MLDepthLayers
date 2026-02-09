@@ -5,7 +5,7 @@
 ## Description
 
 Ce projet est une version modifiée du logiciel **Apple ML Depth Pro** (Copyright © 2024 Apple Inc., All Rights Reserved).  
-Les modifications apportées dans ce dépôt sont réalisées par **[Ton Nom]**.
+
 
 ## Licences et acknowledgements
 
@@ -21,6 +21,10 @@ Ce projet utilise également plusieurs bibliothèques tierces sous **Apache Lice
 
 Pour plus de détails et la licence complète, voir [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).
 
+### Description du modèle
+
+Depth Pro est un modèle de profondeur monoculaire métrique "zero-shot" qui produit des cartes de profondeur haute résolution avec des détails fins.  
+Pour plus d’informations techniques, voir le README original d’Apple et la publication : [Depth Pro paper](https://arxiv.org/abs/2410.02073).
 
 
 

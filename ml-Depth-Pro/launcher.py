@@ -6,7 +6,7 @@ Traite toutes les images dans input/layers et sauvegarde les résultats dans out
 
 import subprocess
 from pathlib import Path
-
+import os
 
 input_folder = Path("input/layers")
 output_folder = Path("output/depth_maps_layers")
@@ -18,6 +18,7 @@ print(f"Found {len(image_paths)} images in {input_folder}")
 
 image_ori_path = Path("input/images")
 
+src_path = str(Path(__file__).parent / "src")
 
 for image_path in image_paths:
     print(f"Processing {image_path.name} ...")
