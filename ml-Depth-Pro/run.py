@@ -22,6 +22,7 @@ import torch
 
 from matplotlib import pyplot as plt
 from tqdm import tqdm
+import matplotlib.image as mpimg
 
 from depth_pro import create_model_and_transforms, load_rgb
 
@@ -36,39 +37,6 @@ def get_torch_device() -> torch.device:
     elif torch.backends.mps.is_available():
         device = torch.device("mps")
     return device
-
-# def create_side_by_side(image, depth, grayscale):
-#     """
-#     Take an RGB image and depth map and place them side by side. This includes a proper normalization of the depth map
-#     for better visibility.
-
-#     Args:
-#         image: the RGB image
-#         depth: the depth map
-#         grayscale: use a grayscale colormap?
-
-#     Returns:
-#         the image and depth map place side by side
-#     """
-#     depth_min = depth.min()
-#     depth_max = depth.max()
-#     normalized_depth = 255 * (depth - depth_min) / (depth_max - depth_min)
-#     normalized_depth *= 3
-
-#     right_side = np.repeat(np.expand_dims(normalized_depth, 2), 3, axis=2) / 3
-#     if not grayscale:
-#         right_side = cv2.applyColorMap(np.uint8(right_side), cv2.COLORMAP_INFERNO)
-
-#     print("=== RIGHT_SIDE ===")
-#     print("Shape:", right_side.shape)
-#     print("Dtype:", right_side.dtype)
-#     print("Min/Max:", right_side.min(), right_side.max())
-
-
-#     if image is None:
-#         return right_side
-#     else:
-#         return np.concatenate((image, right_side), axis=1)
 
 
 def run(args):
@@ -101,14 +69,24 @@ def run(args):
         try:
             LOGGER.info(f"Loading image {image_path} ...")
             image, _, f_px = load_rgb(image_path)
-            print("=== IMAGE CHARGEE ===")
-            print("Shape:", image.shape)         # Doit être (H, W, 3)
-            print("Dtype:", image.dtype)         # Doit être uint8
-            print("Min/Max:", image.min(), image.max())  # Doit être 0–255 si uint8
-            # if image.shape[2] == 4:  # RGBA
-            #     alpha = image[:, :, 3:] / 255.0
-            #     image = image[:, :, :3] * alpha + 255 * (1 - alpha)  # fusion sur fond blanc
-            #     image = image.astype(np.uint8)
+            #image en <f4 (float)
+            img_float32 = mpimg.imread(image_path)
+            
+            # plt.imshow(img)       # imshow gère les couleurs automatiquement
+            # plt.axis('off')       # Optionnel : pour ne pas afficher les axes
+            # plt.show()
+            # plt.imshow(image)
+            # plt.axis('off')
+            # plt.show()
+
+            # print("=== IMAGE CHARGEE ===")
+            # print("Shape:", image.shape)         # Doit être (H, W, 3)
+            # print("Dtype:", image.dtype)         # Doit être uint8
+            # print("Min/Max:", image.min(), image.max())  # Doit être 0–255 si uint8
+            # # if image.shape[2] == 4:  # RGBA
+            # #     alpha = image[:, :, 3:] / 255.0
+            # #     image = image[:, :, :3] * alpha + 255 * (1 - alpha)  # fusion sur fond blanc
+            # #     image = image.astype(np.uint8)
 
         except Exception as e:
             LOGGER.error(str(e))
@@ -150,6 +128,8 @@ def run(args):
 
             # Save as gray-mapped jpg image.
             cmap = plt.get_cmap("gray")
+            
+            #image créee en uint8
             color_depth = (cmap(inverse_depth_normalized)[..., :3] * 255).astype(
                 np.uint8
             )
@@ -160,14 +140,40 @@ def run(args):
 
         # Save Side by side image
         if args.side:
-            lookingGlass_output_file = str(output_file) + "_lkg.jpg"           
-            Side_by_side = np.concatenate((image, right_side), axis=1)
-            PIL.Image.fromarray(Side_by_side).save(lookingGlass_output_file, format="JPEG", quality=90)
-            # plt.figure(figsize=(12, 8))
-            # plt.imshow(Side_by_side)
-            # plt.axis('off')
-            # plt.title("Side-by-side Image + Depth")
+            lookingGlass_output_file = str(output_file) + "_lkg.jpg"
+
+
+            img_float32_uint8 = (img_float32 * 255).astype(np.uint8)
+            right_side_array = np.array(right_side)
+
+            # Vérifier que les hauteurs correspondent
+            if img_float32_uint8.shape[0] != right_side_array.shape[0]:
+                img_float32_uint8 = resize(
+                    img_float32_uint8, right_side_array.shape, preserve_range=True
+                ).astype(np.uint8)
+
+            # Concatenation côte à côte
+            # Si img_float32_uint8 a 4 canaux (RGBA), on prend seulement les 3 premiers (RGB)
+            if img_float32_uint8.shape[2] == 4:
+                img_float32_uint8 = img_float32_uint8[..., :3]
+
+            # Vérifier aussi right_side_array (3 canaux) pour éviter tout problème
+            if right_side_array.shape[2] == 4:
+                right_side_array = right_side_array[..., :3]
+
+            side_by_side = np.concatenate((img_float32_uint8, right_side_array), axis=1)
+
+            plt.imshow(side_by_side)
+            plt.axis('off')
+            plt.show()
+            PIL.Image.fromarray(side_by_side).save(lookingGlass_output_file, format="JPEG", quality=90)
+            
+            
+            # img = mpimg.imread(image_path)
+            # plt.imshow(img)       # imshow gère les couleurs automatiquement
+            # plt.axis('off')       # Optionnel : pour ne pas afficher les axes
             # plt.show()
+
             
         # Display the image and estimated depth map.
         if not args.skip_display:
