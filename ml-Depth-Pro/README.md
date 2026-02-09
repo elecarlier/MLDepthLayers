@@ -1,3 +1,30 @@
+# ML Depth Pro – Version dérivée
+
+**Avertissement : Ce projet est une version modifiée d’Apple ML Depth Pro.**
+
+## Description
+
+Ce projet est une version modifiée du logiciel **Apple ML Depth Pro** (Copyright © 2024 Apple Inc., All Rights Reserved).  
+Les modifications apportées dans ce dépôt sont réalisées par **[Ton Nom]**.
+
+## Licences et acknowledgements
+
+### 1. Apple ML Depth Pro
+Le code original est fourni par Apple sous copyright complet. Les fichiers LICENSE et disclaimers Apple doivent être conservés.  
+Vous pouvez utiliser ce code dérivé à titre personnel ou académique, mais ne pouvez pas utiliser le logo ou nom Apple pour promouvoir ce projet.
+
+### 2. Composants tiers
+Ce projet utilise également plusieurs bibliothèques tierces sous **Apache License 2.0** :
+
+- **timm** (PyTorch Image Models) – Copyright Ross Wightman  
+- **DINOv2** – Copyright Facebook Research  
+
+Pour plus de détails et la licence complète, voir [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).
+
+
+
+
+
 ## Depth Pro: Sharp Monocular Metric Depth in Less Than a Second
 
 This software project accompanies the research paper:

@@ -1,9 +1,16 @@
+
+
 #!/usr/bin/env python3
+
 """Sample script to run DepthPro.
 
 Copyright (C) 2024 Apple Inc. All Rights Reserved.
 """
-
+# =============================================================================
+# Ce fichier est une modification de Apple ML Depth Pro
+# Copyright © 2024 Apple Inc. All Rights Reserved
+# Modifications apportées par [Ton Nom]
+# =============================================================================
 
 import argparse
 import logging
