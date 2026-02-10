@@ -16,8 +16,10 @@ from pathlib import Path
 import tifffile as tiff
 from PIL import Image
 import numpy as np
-from scipy.ndimage import binary_dilation
+from scipy.ndimage import binary_dilation, binary_erosion
 import sys
+
+
 
 layers_folder = Path("input/layers_from_tiff")          # calques extraits si TIFF
 existing_layers_folder = Path("input/layers")           # calques existants
@@ -33,14 +35,56 @@ final_folder.mkdir(parents=True, exist_ok=True)
 masks_dir.mkdir(parents=True, exist_ok=True)
 
 
-def expand_depth_with_mask(depth_map_path, mask, expand_px=60, use_mean=True):
+def depth_to_uint8(depth):
+    """Convertit une depth map float en uint8 0-255"""
+    depth_min, depth_max = depth.min(), depth.max()
+    if depth_max - depth_min == 0:
+        return (depth * 255).astype(np.uint8)
+    norm = (depth - depth_min) / (depth_max - depth_min)
+    return (norm * 255).astype(np.uint8)
+
+def expand_depth_inside(depth_map_path, mask, expand_px=60, interior_px=30, boost=0.0, use_mean=True):
+    """
+    Dilate la depth map autour de l'objet, en prenant les pixels à l'intérieur pour calculer le halo.
+    boost : ajout à la valeur moyenne intérieure (float), pas nécessairement 255 max.
+    """
+    # Charge en float
     depth = np.array(Image.open(depth_map_path)).astype(np.float32)
+    
+    # Si depth est en 0-255, on normalise en 0-1 pour travailler
+    if depth.max() > 1:
+        depth = depth / 255.0
+
+    # Dilater le masque pour créer le halo
     dilated_mask = binary_dilation(mask, iterations=expand_px)
-    new_pixels = dilated_mask & (mask == 0)
-    # new_pixels = dilated_mask & (mask == 1)  # étendre l'objet
-    value = depth[mask == 1].mean() if use_mean else depth[mask == 1].max()
-    depth[new_pixels] = value
-    return Image.fromarray(depth.astype(np.uint8))
+    halo_pixels = dilated_mask & (mask == 0)
+
+    # Erosion pour choisir les pixels à l'intérieur
+    interior_mask = binary_erosion(mask, iterations=interior_px)
+
+    if interior_mask.sum() == 0:
+        value = depth[mask == 1].mean()
+    else:
+        value = depth[interior_mask].mean() if use_mean else depth[interior_mask].max()
+
+    # value = min(value + boost, 1.0)  # reste dans 0-1
+
+    # Appliquer au halo
+    depth[halo_pixels] = value
+
+    # Retour à uint8 pour image finale
+    depth_uint8 = (depth * 255).astype(np.uint8)
+    return Image.fromarray(depth_uint8)
+
+
+# def expand_depth_with_mask(depth_map_path, mask, expand_px=60, use_mean=True):
+#     depth = np.array(Image.open(depth_map_path)).astype(np.float32)
+#     dilated_mask = binary_dilation(mask, iterations=expand_px)
+#     new_pixels = dilated_mask & (mask == 0)
+#     # new_pixels = dilated_mask & (mask == 1)  # étendre l'objet
+#     value = depth[mask == 1].mean() if use_mean else depth[mask == 1].max()
+#     depth[new_pixels] = value
+#     return Image.fromarray(depth.astype(np.uint8))
 
 def dilate_image(image_path, expand_px=5):
     """
@@ -139,7 +183,9 @@ for image_path in image_paths:
     # Appliquer dilation avec le masque si disponible
     mask_name = image_path.stem
     if mask_name in masks:
-        expanded_depth = expand_depth_with_mask(depth_path, masks[mask_name], expand_px=60)
+        # expanded_depth = expand_depth_with_mask(depth_path, masks[mask_name], expand_px=60)
+        expanded_depth = expand_depth_inside(depth_path, masks[mask_name], expand_px=60, interior_px=40)
+
         
         # Nouveau nom pour la map dilatée
         dilated_path = output_folder / f"{image_path.stem}_map_dilated.png"
