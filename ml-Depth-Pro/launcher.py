@@ -16,7 +16,7 @@ from pathlib import Path
 import tifffile as tiff
 from PIL import Image
 import numpy as np
-from scipy.ndimage import binary_dilation, binary_erosion
+from scipy.ndimage import binary_dilation, binary_erosion, distance_transform_edt
 import sys
 
 
@@ -43,38 +43,74 @@ def depth_to_uint8(depth):
     norm = (depth - depth_min) / (depth_max - depth_min)
     return (norm * 255).astype(np.uint8)
 
-def expand_depth_inside(depth_map_path, mask, expand_px=60, interior_px=30, boost=0.0, use_mean=True):
-    """
-    Dilate la depth map autour de l'objet, en prenant les pixels à l'intérieur pour calculer le halo.
-    boost : ajout à la valeur moyenne intérieure (float), pas nécessairement 255 max.
-    """
-    # Charge en float
+def expand_depth_inside(depth_map_path, mask, expand_px=60, interior_px=15):
     depth = np.array(Image.open(depth_map_path)).astype(np.float32)
-    
-    # Si depth est en 0-255, on normalise en 0-1 pour travailler
     if depth.max() > 1:
-        depth = depth / 255.0
+        depth /= 255.0
 
     # Dilater le masque pour créer le halo
     dilated_mask = binary_dilation(mask, iterations=expand_px)
-    halo_pixels = dilated_mask & (mask == 0)
+    halo_pixels = dilated_mask & (~mask)
 
-    # Erosion pour choisir les pixels à l'intérieur
-    interior_mask = binary_erosion(mask, iterations=interior_px)
+    # distance transform depuis le **bord de l'objet**
+    dist, indices = distance_transform_edt(mask == 0, return_indices=True)
 
-    if interior_mask.sum() == 0:
-        value = depth[mask == 1].mean()
-    else:
-        value = depth[interior_mask].mean() if use_mean else depth[interior_mask].max()
+    # pour chaque pixel du halo, on prend le pixel dans l'objet à distance interior_px
+    halo_y, halo_x = np.where(halo_pixels)
+    for y, x in zip(halo_y, halo_x):
+        iy, ix = indices[:, y, x]  # pixel le plus proche dans l'objet
+        # maintenant on remonte dans l'objet interior_px pixels
+        dy = iy - y
+        dx = ix - x
+        norm = np.sqrt(dy**2 + dx**2)
+        if norm == 0:
+            continue
+        # on calcule un point à distance interior_px dans l'objet
+        factor = interior_px / norm
+        iy_new = int(round(y + dy * factor))
+        ix_new = int(round(x + dx * factor))
+        # clamp pour rester dans l'image
+        iy_new = np.clip(iy_new, 0, mask.shape[0]-1)
+        ix_new = np.clip(ix_new, 0, mask.shape[1]-1)
+        # appliquer seulement si on est dans l'objet
+        if mask[iy_new, ix_new]:
+            depth[y, x] = depth[iy_new, ix_new]
 
-    # value = min(value + boost, 1.0)  # reste dans 0-1
+    return Image.fromarray((depth * 255).astype(np.uint8))
 
-    # Appliquer au halo
-    depth[halo_pixels] = value
 
-    # Retour à uint8 pour image finale
-    depth_uint8 = (depth * 255).astype(np.uint8)
-    return Image.fromarray(depth_uint8)
+# def expand_depth_inside(depth_map_path, mask, expand_px=60, interior_px=30, boost=0.0, use_mean=True):
+#     """
+#     Dilate la depth map autour de l'objet, en prenant les pixels à l'intérieur pour calculer le halo.
+#     boost : ajout à la valeur moyenne intérieure (float), pas nécessairement 255 max.
+#     """
+#     # Charge en float
+#     depth = np.array(Image.open(depth_map_path)).astype(np.float32)
+    
+#     # Si depth est en 0-255, on normalise en 0-1 pour travailler
+#     if depth.max() > 1:
+#         depth = depth / 255.0
+
+#     # Dilater le masque pour créer le halo
+#     dilated_mask = binary_dilation(mask, iterations=expand_px)
+#     halo_pixels = dilated_mask & (mask == 0)
+
+#     # Erosion pour choisir les pixels à l'intérieur
+#     interior_mask = binary_erosion(mask, iterations=interior_px)
+
+#     if interior_mask.sum() == 0:
+#         value = depth[mask == 1].mean()
+#     else:
+#         value = depth[interior_mask].mean() if use_mean else depth[interior_mask].max()
+
+#     # value = min(value + boost, 1.0)  # reste dans 0-1
+
+#     # Appliquer au halo
+#     depth[halo_pixels] = value
+
+#     # Retour à uint8 pour image finale
+#     depth_uint8 = (depth * 255).astype(np.uint8)
+#     return Image.fromarray(depth_uint8)
 
 
 # def expand_depth_with_mask(depth_map_path, mask, expand_px=60, use_mean=True):
