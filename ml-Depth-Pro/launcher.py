@@ -24,7 +24,7 @@ import sys
 layers_folder = Path("input/layers_from_tiff")          # calques extraits si TIFF
 existing_layers_folder = Path("input/layers")           # calques existants
 
-#output_folder_dilated = Path("output/dilated")
+output_folder_dilated = Path("output/depth_maps_dilated")
 output_folder = Path("output/depth_maps_layers")
 final_folder = Path("output/final")
 masks_dir = Path("output/masks")                        # Les masques générés par generate_masks.py
@@ -187,6 +187,7 @@ if not image_paths:
 
 print(f"Found {len(image_paths)} images à traiter.")
 
+
 # ---------------------------
 # Générer les masques avec generate_masks.py
 # ---------------------------
@@ -222,13 +223,22 @@ for image_path in image_paths:
         # expanded_depth = expand_depth_with_mask(depth_path, masks[mask_name], expand_px=60)
         expanded_depth = expand_depth_inside(depth_path, masks[mask_name], expand_px=60, interior_px=40)
 
-        
-        # Nouveau nom pour la map dilatée
-        dilated_path = output_folder / f"{image_path.stem}_map_dilated.png"
+        dilated_path = output_folder_dilated / f"{image_path.stem}_map_dilated.png"
         expanded_depth.save(dilated_path)
         print(f"✅ Depth map dilatée enregistrée : {dilated_path}")
     else:
         print(f"⚠️ Aucun masque trouvé pour {mask_name}")
+
+print("Génération side-by-side pour la photo globale")
+
+subprocess.run([
+    sys.executable, "run.py",
+    "-i", str(global_image),
+    "-o", str(final_folder),
+    "-s",                
+    "--skip-display"
+])
+
 
 # ---------------------------
 #Traitement avec run.py
