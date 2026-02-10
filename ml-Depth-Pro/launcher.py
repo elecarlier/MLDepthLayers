@@ -11,25 +11,36 @@ Ensuite :
 - Les depth maps générées sont regroupées dans un TIFF multipage final
 """
 
-
 import subprocess
 from pathlib import Path
 import tifffile as tiff
 from PIL import Image
 import numpy as np
 from scipy.ndimage import binary_dilation
-
+import sys
 
 layers_folder = Path("input/layers_from_tiff")          # calques extraits si TIFF
 existing_layers_folder = Path("input/layers")           # calques existants
-output_folder_dilated = Path("output/dilated")
+
+#output_folder_dilated = Path("output/dilated")
 output_folder = Path("output/depth_maps_layers")
 final_folder = Path("output/final")
+masks_dir = Path("output/masks")                        # Les masques générés par generate_masks.py
+
+
 output_folder.mkdir(parents=True, exist_ok=True)
 final_folder.mkdir(parents=True, exist_ok=True)
+masks_dir.mkdir(parents=True, exist_ok=True)
 
 
-
+def expand_depth_with_mask(depth_map_path, mask, expand_px=60, use_mean=True):
+    depth = np.array(Image.open(depth_map_path)).astype(np.float32)
+    dilated_mask = binary_dilation(mask, iterations=expand_px)
+    new_pixels = dilated_mask & (mask == 0)
+    # new_pixels = dilated_mask & (mask == 1)  # étendre l'objet
+    value = depth[mask == 1].mean() if use_mean else depth[mask == 1].max()
+    depth[new_pixels] = value
+    return Image.fromarray(depth.astype(np.uint8))
 
 def dilate_image(image_path, expand_px=5):
     """
@@ -97,43 +108,84 @@ if not image_paths:
 print(f"Found {len(image_paths)} images à traiter.")
 
 # ---------------------------
-#Traitement avec run.py
+# Générer les masques avec generate_masks.py
 # ---------------------------
+print("✅ Génération des masques...")
+subprocess.run([sys.executable, "generate_masks.py", "--output", str(masks_dir)])
+print("✅ Masques générés dans", masks_dir)
 
-#test
+masks = {}
+for mask_file in masks_dir.glob("*.png"):
+    name = mask_file.stem.replace("_mask", "")
+    mask_img = Image.open(mask_file).convert("L")
+    masks[name] = (np.array(mask_img) > 0).astype(np.uint8)
+
+
+# ---------------------------
+# Génération des depth maps + dilation
+# ---------------------------
 for image_path in image_paths:
     print(f"Processing {image_path.name} ...")
 
-    # --- Dilate le calque pour que la depth map dépasse légèrement ---
-    
-    #iterations=expand_px -> pixel de dilatation
-    dilated_img = dilate_image(image_path, expand_px=60)  
-    temp_path = output_folder_dilated / f"dilated_{image_path.name}"
-    dilated_img.save(temp_path)
-    
-    print(f"✅ Envoi à run.py : {temp_path}")
-    print(f"Existe ? {temp_path.exists()}")
-
-    # --- Passe la dilatée à run.py ---
+    # Génération depth map
+    depth_path = output_folder / f"{image_path.stem}_map.jpg"
     subprocess.run([
-        "python", "run.py",
-        "-i", str(temp_path),
-        "-o", str(output_folder_dilated),
+        sys.executable, "run.py",
+        "-i", str(image_path),
+        "-o", str(output_folder),
         "--skip-display"
     ])
 
+    # Appliquer dilation avec le masque si disponible
+    mask_name = image_path.stem
+    if mask_name in masks:
+        expanded_depth = expand_depth_with_mask(depth_path, masks[mask_name], expand_px=60)
+        
+        # Nouveau nom pour la map dilatée
+        dilated_path = output_folder / f"{image_path.stem}_map_dilated.png"
+        expanded_depth.save(dilated_path)
+        print(f"✅ Depth map dilatée enregistrée : {dilated_path}")
+    else:
+        print(f"⚠️ Aucun masque trouvé pour {mask_name}")
 
+# ---------------------------
+#Traitement avec run.py
+# ---------------------------
 
-# src_path = str(Path(__file__).parent / "src")  # si run.py nécessite un chemin src
-
+# #test
 # for image_path in image_paths:
 #     print(f"Processing {image_path.name} ...")
+
+#     # --- Dilate le calque pour que la depth map dépasse légèrement ---
+    
+#     #iterations=expand_px -> pixel de dilatation
+#     dilated_img = dilate_image(image_path, expand_px=60)  
+#     temp_path = output_folder_dilated / f"dilated_{image_path.name}"
+#     dilated_img.save(temp_path)
+
+#     print(f"✅ Envoi à run.py : {temp_path}")
+#     print(f"Existe ? {temp_path.exists()}")
+
+#     # --- Passe la dilatée à run.py ---
 #     subprocess.run([
 #         "python", "run.py",
-#         "-i", str(image_path),
-#         "-o", str(output_folder),
+#         "-i", str(temp_path),
+#         "-o", str(output_folder_dilated),
 #         "--skip-display"
 #     ])
+
+
+
+# # src_path = str(Path(__file__).parent / "src")  # si run.py nécessite un chemin src
+
+# # for image_path in image_paths:
+# #     print(f"Processing {image_path.name} ...")
+# #     subprocess.run([
+# #         "python", "run.py",
+# #         "-i", str(image_path),
+# #         "-o", str(output_folder),
+# #         "--skip-display"
+# #     ])
 
 print("✅ Toutes les layers traitées !")
 
