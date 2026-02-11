@@ -4,30 +4,42 @@ import numpy as np
 
 INPUT_DIR = "input/layers"
 OUTPUT_DIR = "input/layers_expanded"
-EXPAND_PIXELS = 60  # taille d’agrandissement
+SCALE = 1.15  # 15% plus grand
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 for filename in os.listdir(INPUT_DIR):
-    if filename.lower().endswith((".png", ".jpg", ".jpeg")):
+    if filename.lower().endswith(".png"):
         path = os.path.join(INPUT_DIR, filename)
-        
-        mask = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+        img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
 
-        # Si masque RGBA → on récupère alpha
-        if mask.shape[-1] == 4:
-            alpha = mask[:, :, 3]
-        else:
-            alpha = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        h, w = img.shape[:2]
 
-        # Binarisation propre
-        _, binary = cv2.threshold(alpha, 1, 255, cv2.THRESH_BINARY)
+        # Resize complet (RGBA inclus)
+        new_w = int(w * SCALE)
+        new_h = int(h * SCALE)
+        scaled = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
 
-        # Dilatation
-        kernel = np.ones((EXPAND_PIXELS, EXPAND_PIXELS), np.uint8)
-        expanded = cv2.dilate(binary, kernel, iterations=1)
+        # Créer canvas original
+        canvas = np.zeros_like(img)
+
+        # Centrage
+        x_offset = (w - new_w) // 2
+        y_offset = (h - new_h) // 2
+
+        # Si l'image dépasse → on crop proprement
+        x1 = max(0, -x_offset)
+        y1 = max(0, -y_offset)
+
+        x2 = min(new_w, w - x_offset)
+        y2 = min(new_h, h - y_offset)
+
+        canvas[
+            max(0, y_offset):max(0, y_offset)+(y2-y1),
+            max(0, x_offset):max(0, x_offset)+(x2-x1)
+        ] = scaled[y1:y2, x1:x2]
 
         output_path = os.path.join(OUTPUT_DIR, filename)
-        cv2.imwrite(output_path, expanded)
+        cv2.imwrite(output_path, canvas)
 
-print("Expansion terminée.")
+print("Scale propre terminé.")

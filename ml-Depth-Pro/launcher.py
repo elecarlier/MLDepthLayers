@@ -23,6 +23,7 @@ import sys
 
 layers_folder = Path("input/layers_from_tiff")          # calques extraits si TIFF
 existing_layers_folder = Path("input/layers")           # calques existants
+existing_layers_folder_exp = Path("input/layers_expanded")
 
 output_folder_dilated = Path("output/depth_maps_dilated")
 output_folder = Path("output/depth_maps_layers")
@@ -140,7 +141,8 @@ if global_image.suffix.lower() in [".tif", ".tiff"]:
 else:
     print(f"Photo globale détectée : {global_image}")
     # Les calques existants + la photo globale
-    processing_folder = existing_layers_folder
+    #changing to exp
+    processing_folder = existing_layers_folder_exp
     extra_images = [global_image]
 
 
@@ -175,25 +177,25 @@ for image_path in image_paths:
     print(f"Processing {image_path.name} ...")
 
     # Génération depth map
-    depth_path = output_folder / f"{image_path.stem}_map.jpg"
+    depth_path = output_folder_dilated / f"{image_path.stem}_map.jpg"
     subprocess.run([
         sys.executable, "run.py",
         "-i", str(image_path),
-        "-o", str(output_folder),
+        "-o", str(output_folder_dilated),
         "--skip-display"
     ])
 
-    # Appliquer dilation avec le masque si disponible
-    mask_name = image_path.stem
-    if mask_name in masks:
-        # expanded_depth = expand_depth_with_mask(depth_path, masks[mask_name], expand_px=60)
-        expanded_depth = expand_depth_inside(depth_path, masks[mask_name], expand_px=60, interior_px=40)
+    # # Appliquer dilation avec le masque si disponible
+    # mask_name = image_path.stem
+    # if mask_name in masks:
+    #     # expanded_depth = expand_depth_with_mask(depth_path, masks[mask_name], expand_px=60)
+    #     expanded_depth = expand_depth_inside(depth_path, masks[mask_name], expand_px=60, interior_px=40)
 
-        dilated_path = output_folder_dilated / f"{image_path.stem}_map_dilated.png"
-        expanded_depth.save(dilated_path)
-        print(f"✅ Depth map dilatée enregistrée : {dilated_path}")
-    else:
-        print(f"⚠️ Aucun masque trouvé pour {mask_name}")
+    #     dilated_path = output_folder_dilated / f"{image_path.stem}_map_dilated.png"
+    #     expanded_depth.save(dilated_path)
+    #     print(f"✅ Depth map dilatée enregistrée : {dilated_path}")
+    # else:
+    #     print(f"⚠️ Aucun masque trouvé pour {mask_name}")
 
 print("Génération side-by-side pour la photo globale")
 
