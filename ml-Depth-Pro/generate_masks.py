@@ -25,7 +25,7 @@ def inspect_mask(mask, name="mask"):
     print(f"Dernier pixel ({h-1},{w-1}) : {mask[h-1, w-1]}")
 
 
-masks_dir = "input/masks"
+masks_dir = "input/layers"
 #key -> le nom du fichier 
 #value -> tableau numpy 2D avec valeurs 0-1
 
@@ -56,7 +56,7 @@ for i, (name, mask) in enumerate(masks.items()):
     plt.title(name)
     plt.axis("off")
 
-plt.show()
+# plt.show()
 
 
 output_dir = "output/masks"
@@ -68,28 +68,3 @@ for name, mask in masks.items():
     img.save(os.path.join(output_dir, f"{name}_mask.png"))
 
 
-# Charger masque (noir & blanc)
-# mask = np.array(Image.open("input/masks/person.png").convert("L")) / 255.0
-
-# #ici ca va générer 3 cartes de prof comme on a 3 maskes
-# depth_person = depth * mask
-# depth_table = depth * mask_table
-# depth_background = depth * mask_background
-
-
-# def remap(depth, min_val, max_val):
-#     d = depth.copy()
-#     d = (d - d.min()) / (d.max() - d.min() + 1e-6)
-#     return d * (max_val - min_val) + min_val
-
-
-# depth_person = remap(depth_person, 0.7, 1.0)
-# depth_table = remap(depth_table, 0.4, 0.7)
-# depth_background = remap(depth_background, 0.0, 0.4)
-
-
-# depth_final = np.maximum.reduce([
-#     depth_person,
-#     depth_table,
-#     depth_background
-# ])
