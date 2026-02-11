@@ -43,6 +43,7 @@ def depth_to_uint8(depth):
     norm = (depth - depth_min) / (depth_max - depth_min)
     return (norm * 255).astype(np.uint8)
 
+
 def expand_depth_inside(depth_map_path, mask, expand_px=60, interior_px=15):
     depth = np.array(Image.open(depth_map_path)).astype(np.float32)
     if depth.max() > 1:
@@ -79,49 +80,6 @@ def expand_depth_inside(depth_map_path, mask, expand_px=60, interior_px=15):
     return Image.fromarray((depth * 255).astype(np.uint8))
 
 
-# def expand_depth_inside(depth_map_path, mask, expand_px=60, interior_px=30, boost=0.0, use_mean=True):
-#     """
-#     Dilate la depth map autour de l'objet, en prenant les pixels à l'intérieur pour calculer le halo.
-#     boost : ajout à la valeur moyenne intérieure (float), pas nécessairement 255 max.
-#     """
-#     # Charge en float
-#     depth = np.array(Image.open(depth_map_path)).astype(np.float32)
-    
-#     # Si depth est en 0-255, on normalise en 0-1 pour travailler
-#     if depth.max() > 1:
-#         depth = depth / 255.0
-
-#     # Dilater le masque pour créer le halo
-#     dilated_mask = binary_dilation(mask, iterations=expand_px)
-#     halo_pixels = dilated_mask & (mask == 0)
-
-#     # Erosion pour choisir les pixels à l'intérieur
-#     interior_mask = binary_erosion(mask, iterations=interior_px)
-
-#     if interior_mask.sum() == 0:
-#         value = depth[mask == 1].mean()
-#     else:
-#         value = depth[interior_mask].mean() if use_mean else depth[interior_mask].max()
-
-#     # value = min(value + boost, 1.0)  # reste dans 0-1
-
-#     # Appliquer au halo
-#     depth[halo_pixels] = value
-
-#     # Retour à uint8 pour image finale
-#     depth_uint8 = (depth * 255).astype(np.uint8)
-#     return Image.fromarray(depth_uint8)
-
-
-# def expand_depth_with_mask(depth_map_path, mask, expand_px=60, use_mean=True):
-#     depth = np.array(Image.open(depth_map_path)).astype(np.float32)
-#     dilated_mask = binary_dilation(mask, iterations=expand_px)
-#     new_pixels = dilated_mask & (mask == 0)
-#     # new_pixels = dilated_mask & (mask == 1)  # étendre l'objet
-#     value = depth[mask == 1].mean() if use_mean else depth[mask == 1].max()
-#     depth[new_pixels] = value
-#     return Image.fromarray(depth.astype(np.uint8))
-
 def dilate_image(image_path, expand_px=5):
     """
     Dilate l'objet dans l'image de 'expand_px' pixels.
@@ -141,8 +99,11 @@ def dilate_image(image_path, expand_px=5):
     img.putalpha(Image.fromarray(new_alpha))
     return img
 
-#Fonction de conversionn TFF -> PNG
+
 def tiff_to_pngs(tiff_path, output_folder):
+    """
+    Fonction de conversionn TFF -> PNG
+    """
     output_folder.mkdir(parents=True, exist_ok=True)
 
     with tiff.TiffFile(tiff_path) as tif:
@@ -156,6 +117,8 @@ def tiff_to_pngs(tiff_path, output_folder):
 
     print(f"✅ {len(tif.pages)} pages extracted to {output_folder}")
 
+
+
 images_folder = Path("input/images")
 image_files = sorted(images_folder.glob("*.*"))
 if not image_files:
@@ -164,7 +127,10 @@ if not image_files:
 # On prend le premier fichier trouvé
 global_image = image_files[0]
 
+
+# ---------------------------
 # Detection du mode
+# ---------------------------
 if global_image.suffix.lower() in [".tif", ".tiff"]:
     print(f"TIFF détecté : {global_image}, extraction des pages...")
     tiff_to_pngs(global_image, layers_folder)
@@ -268,16 +234,16 @@ subprocess.run([
 
 
 
-# # src_path = str(Path(__file__).parent / "src")  # si run.py nécessite un chemin src
+# src_path = str(Path(__file__).parent / "src")  # si run.py nécessite un chemin src
 
-# # for image_path in image_paths:
-# #     print(f"Processing {image_path.name} ...")
-# #     subprocess.run([
-# #         "python", "run.py",
-# #         "-i", str(image_path),
-# #         "-o", str(output_folder),
-# #         "--skip-display"
-# #     ])
+# for image_path in image_paths:
+#     print(f"Processing {image_path.name} ...")
+#     subprocess.run([
+#         "python", "run.py",
+#         "-i", str(image_path),
+#         "-o", str(output_folder),
+#         "--skip-display"
+#     ])
 
 print("✅ Toutes les layers traitées !")
 
