@@ -9,7 +9,7 @@ SCALE = 1.15  # 15% plus grand
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 for filename in os.listdir(INPUT_DIR):
-    if filename.lower().endswith(".png"):
+    if filename.lower().endswith(".jpg"):
         path = os.path.join(INPUT_DIR, filename)
         img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
 
@@ -40,6 +40,8 @@ for filename in os.listdir(INPUT_DIR):
         ] = scaled[y1:y2, x1:x2]
 
         output_path = os.path.join(OUTPUT_DIR, filename)
-        cv2.imwrite(output_path, canvas)
+        success = cv2.imwrite(output_path, canvas)
+        if not success:
+            print("Erreur sauvegarde :", output_path)
 
 print("Scale propre terminé.")
