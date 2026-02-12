@@ -26,7 +26,6 @@ import sys
 layers_folder = Path("input/layers_from_tiff")          # calques extraits si TIFF
 existing_layers_folder = Path("input/layers")           # calques existants
 
-
 # output_folder_dilated = Path("output/depth_maps_dilated")
 output_folder = Path("output/depth_maps_layers")
 final_folder = Path("output/final")
@@ -199,6 +198,7 @@ dilate_images()
 #     scale=1.2
 #)
 
+# mettre en option 
 print("Génération side-by-side pour la photo globale")
 
 subprocess.run([
