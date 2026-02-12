@@ -13,6 +13,7 @@ Ensuite :
 
 
 from dilate_image import dilate_images
+from generate_isolated_map import isolate_from_masks
 import subprocess
 from pathlib import Path
 import tifffile as tiff
@@ -175,20 +176,22 @@ print(f"Found {len(image_paths)} images à traiter.")
 # ---------------------------
 # Générer les masques avec generate_masks.py
 # ---------------------------
-# print("✅ Génération des masques...")
-# subprocess.run([sys.executable, "generate_masks.py", "--output", str(masks_dir)])
-# print("✅ Masques générés dans", masks_dir)
 
-# masks = {}
-# for mask_file in masks_dir.glob("*.png"):
-#     name = mask_file.stem.replace("_mask", "")
-#     mask_img = Image.open(mask_file).convert("L")
-#     masks[name] = (np.array(mask_img) > 0).astype(np.uint8)
+print("✅ Génération des masques...")
+subprocess.run([sys.executable, "generate_masks.py", "--output", str(masks_dir)])
+print("✅ Masques générés dans", masks_dir)
+
+masks = {}
+for mask_file in masks_dir.glob("*.png"):
+    name = mask_file.stem.replace("_mask", "")
+    mask_img = Image.open(mask_file).convert("L")
+    masks[name] = (np.array(mask_img) > 0).astype(np.uint8)
 
 
 # ---------------------------
 # Génération des depth maps 
 # ---------------------------
+print("✅ Génération des cartes de profondeur...")
 for image_path in image_paths:
     print(f"Processing {image_path.name} ...")
 
@@ -225,72 +228,42 @@ subprocess.run([
 ])
 
 
-# ---------------------------
-#Traitement avec run.py
-# ---------------------------
-
-# #test
-# for image_path in image_paths:
-#     print(f"Processing {image_path.name} ...")
-
-#     # --- Dilate le calque pour que la depth map dépasse légèrement ---
-    
-#     #iterations=expand_px -> pixel de dilatation
-#     dilated_img = dilate_image(image_path, expand_px=60)  
-#     temp_path = output_folder_dilated / f"dilated_{image_path.name}"
-#     dilated_img.save(temp_path)
-
-#     print(f"✅ Envoi à run.py : {temp_path}")
-#     print(f"Existe ? {temp_path.exists()}")
-
-#     # --- Passe la dilatée à run.py ---
-#     subprocess.run([
-#         "python", "run.py",
-#         "-i", str(temp_path),
-#         "-o", str(output_folder_dilated),
-#         "--skip-display"
-#     ])
 
 
-
-# src_path = str(Path(__file__).parent / "src")  # si run.py nécessite un chemin src
-
-# for image_path in image_paths:
-#     print(f"Processing {image_path.name} ...")
-#     subprocess.run([
-#         "python", "run.py",
-#         "-i", str(image_path),
-#         "-o", str(output_folder),
-#         "--skip-display"
-#     ])
-
-print("✅ Toutes les layers traitées !")
 
 # ---------------------------
-# Création TIFF multipage final
+# Génération des depth maps isolées
 # ---------------------------
+print("✅ Génération des cartes de profondeur isolées...")
 
-def load_image(path):
-    return np.array(Image.open(path))
+isolate_from_masks()
 
-# Récupérer toutes les images générées
-layer_images = sorted(output_folder.glob("*.*"))
-layer_images = [p for p in layer_images if p.suffix.lower() in [".png", ".jpg", ".jpeg"]]
+# # ---------------------------
+# # Création TIFF multipage final
+# # ---------------------------
 
-if not layer_images:
-    raise RuntimeError("❌ Aucun fichier depth map trouvé pour créer le TIFF multipage")
+# def load_image(path):
+#     return np.array(Image.open(path))
+
+# # Récupérer toutes les images générées
+# layer_images = sorted(output_folder.glob("*.*"))
+# layer_images = [p for p in layer_images if p.suffix.lower() in [".png", ".jpg", ".jpeg"]]
+
+# if not layer_images:
+#     raise RuntimeError("❌ Aucun fichier depth map trouvé pour créer le TIFF multipage")
 
 
-pages = [load_image(p) for p in layer_images]
-photometric = "rgb" if pages[0].ndim == 3 else "minisblack"
+# pages = [load_image(p) for p in layer_images]
+# photometric = "rgb" if pages[0].ndim == 3 else "minisblack"
 
-output_tiff = final_folder / "layers_stack.tif"
-tiff.imwrite(
-    output_tiff,
-    pages,
-    photometric=photometric,
-    bigtiff=True  # ✅ permet de dépasser la limite de 4 Go
-)
+# output_tiff = final_folder / "layers_stack.tif"
+# tiff.imwrite(
+#     output_tiff,
+#     pages,
+#     photometric=photometric,
+#     bigtiff=True  # ✅ permet de dépasser la limite de 4 Go
+# )
 
-print(f"✅ TIFF multipage final créé : {output_tiff}")
+# print(f"✅ TIFF multipage final créé : {output_tiff}")
 
+print("Terminé")
