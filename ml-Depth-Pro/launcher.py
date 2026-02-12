@@ -204,7 +204,7 @@ for image_path in image_paths:
 # ---------------------------
 # Dilatation des depths maps 
 # ---------------------------
-dilate_images()
+# dilate_images()
 
 # Ou avec des paramètres personnalisés
 # dilate_images(
