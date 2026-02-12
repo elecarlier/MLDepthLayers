@@ -7,11 +7,8 @@ def isolate_from_masks(
     output_dir="output/isolated",
 ):
     """
-    Isole des parties d'une image globale à partir de plusieurs masques.
-    Hypothèses :
-        - Image globale : un fichier *_map.jpg dans images_dir
-        - Masques : fichiers png dans masks_dir
-        - Résultats : sauvegardés dans output_dir
+    Isole des parties d'une image globale à partir de plusieurs masques
+    et crée un PNG avec transparence (fond transparent là où le masque est noir).
     """
 
     os.makedirs(output_dir, exist_ok=True)
@@ -42,13 +39,14 @@ def isolate_from_masks(
             print(f"Taille différente pour {mask_name}, ignoré")
             continue
 
-        # Appliquer le masque
-        result = cv2.bitwise_and(image, image, mask=mask)
+        # Créer le résultat avec canal alpha
+        b, g, r = cv2.split(image)
+        rgba = cv2.merge([b, g, r, mask])  # le masque devient le canal alpha
 
-        # Sauvegarder
+        # Sauvegarder le PNG transparent
         output_name = os.path.splitext(mask_name)[0] + "_isolated.png"
         output_path = os.path.join(output_dir, output_name)
-        cv2.imwrite(output_path, result)
+        cv2.imwrite(output_path, rgba)
 
     print("Isolation terminée.")
 
