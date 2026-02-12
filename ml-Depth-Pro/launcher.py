@@ -120,14 +120,30 @@ def tiff_to_pngs(tiff_path, output_folder):
     print(f"✅ {len(tif.pages)} pages extracted to {output_folder}")
 
 
-
 images_folder = Path("input/images")
 image_files = sorted(images_folder.glob("*.*"))
-if not image_files:
-    raise RuntimeError("Aucun fichier trouvé dans input/images")
 
-# On prend le premier fichier trouvé
-global_image = image_files[0]
+# --------------------------------------------------
+# Cas 1 : une image globale existe dans input/images
+# --------------------------------------------------
+if image_files:
+    global_image = image_files[0]
+    print(f"Image globale trouvée : {global_image}")
+
+# --------------------------------------------------
+# Cas 2 : aucune image globale → on prend la dernière layer
+# --------------------------------------------------
+else:
+    print("Aucune image dans input/images.")
+    print("Utilisation de la dernière image du dossier input/layers comme globale.")
+
+    layer_files = sorted(existing_layers_folder.glob("*.*"))
+
+    if not layer_files:
+        raise RuntimeError("Aucune image trouvée ni dans input/images ni dans input/layers.")
+
+    global_image = layer_files[-1]  # dernière image alphabétique
+    print(f"Image globale auto-définie : {global_image}")
 
 
 # ---------------------------
@@ -150,7 +166,6 @@ else:
 image_paths = sorted(processing_folder.glob("*.*"))
 if global_image.suffix.lower() not in [".tif", ".tiff"]:
     image_paths += extra_images  # ajoute la photo globale aux calques
-
 if not image_paths:
     raise RuntimeError("Aucun fichier à traiter !")
 
