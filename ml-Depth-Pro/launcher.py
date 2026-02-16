@@ -83,8 +83,10 @@ else:
 
 
 image_paths = sorted(processing_folder.glob("*.*"))
-if global_image.suffix.lower() not in [".tif", ".tiff"]:
-    image_paths += extra_images  # ajoute la photo globale aux calques
+do_side_by_side = "-s" in sys.argv
+if not do_side_by_side and global_image not in image_paths:
+    image_paths += extra_images
+
 if not image_paths:
     raise RuntimeError("Aucun fichier à traiter !")
 
@@ -113,7 +115,6 @@ print("✅ Génération des cartes de profondeur...")
 for image_path in image_paths:
     print(f"Processing {image_path.name} ...")
 
-    # Génération depth map
     depth_path = output_folder / f"{image_path.stem}_map.jpg"
     subprocess.run([
         sys.executable, "run.py",
@@ -134,16 +135,21 @@ for image_path in image_paths:
 #     scale=1.2
 #)
 
-# mettre en option 
-print("Génération side-by-side pour la photo globale")
 
-subprocess.run([
-    sys.executable, "run.py",
-    "-i", str(global_image),
-    "-o", str(final_folder),
-    "-s",                
-    "--skip-display"
-])
+# ---------------------------
+# Génération side-by-side pour la photo globale
+# ---------------------------
+if "-s" in sys.argv:
+    print("Génération side-by-side pour la photo globale")
+    subprocess.run([
+        sys.executable, "run.py",
+        "-i", str(global_image),
+        "-o", str(final_folder),
+        "-s",                
+        "--skip-display"
+    ])
+else:
+    print("⚠️ Side-by-side non généré (pas d'argument -s)")
 
 
 # ---------------------------
