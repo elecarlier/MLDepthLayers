@@ -61,7 +61,7 @@ def clean_name(filename):
     name = name.replace("_mask", "")
     name = name.replace("_isolated", "")
 
-    return f"{name}.png"
+    return f"{name}_map.png"
 
 
 def export_final_folders(
@@ -71,8 +71,8 @@ def export_final_folders(
 ):
     """
     Crée deux dossiers dans le dossier du PSD :
-        - global/
-        - layers/
+        - global_map/
+        - layers_map/
 
     Et copie les fichiers isolés en les renommant proprement.
     """
@@ -80,8 +80,8 @@ def export_final_folders(
     psd_path = Path(psd_path)
     base_dir = psd_path.parent
 
-    global_dir = base_dir / "global"
-    layers_dir = base_dir / "layers"
+    global_dir = base_dir / "global_map"
+    layers_dir = base_dir / "layers_map"
 
     global_dir.mkdir(exist_ok=True)
     layers_dir.mkdir(exist_ok=True)
