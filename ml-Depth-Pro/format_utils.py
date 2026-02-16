@@ -37,9 +37,7 @@ def psd_to_png(input_psd: Path, output_folder: Path):
     _export_layers(psd)
 
 
-# ---------------------------
-# Exemple d'utilisation
-# ---------------------------
+
 if __name__ == "__main__":
     # Extraction PSD -> PNG
     psd_to_png(Path("input/images/Escargot.psd"), Path("input/layers"))
