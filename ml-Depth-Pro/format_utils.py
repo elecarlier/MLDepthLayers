@@ -27,6 +27,9 @@ def psd_to_png(input_psd: Path, output_folder: Path):
             if layer.is_group():
                 _export_layers(layer, parent_name + layer.name + "_")
             else:
+                if layer.name.lower().endswith(" map"):
+                    print(f"⚠️ Ignoré layer se terminant par ' map' : {layer.name}")
+                    continue
                 layer_image = layer.composite()
                 if layer_image:
                     full_image = Image.new("RGBA", (psd_width, psd_height), (0,0,0,0))
