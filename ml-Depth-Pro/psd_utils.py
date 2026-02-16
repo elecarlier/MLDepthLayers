@@ -47,9 +47,9 @@ def psd_to_png(input_psd: Path, output_folder: Path):
 
 
 
-# # ---------------------------
-# # PNG -> PSD
-# # ---------------------------
+# ---------------------------
+# PNG -> PSD
+# ---------------------------
 # def png_to_psd_global(layers_dir: Path, depth_dir: Path, isolated_dir: Path,
 #                       output_file: Path, reference_image: Path):
 #     """
@@ -116,3 +116,5 @@ if __name__ == "__main__":
     #     output_file=Path("output/final/layers_combined.psd"),
     #     reference_image=Path("input/images/Escargot.png")  # image globale pour taille PSD
     # )
+
+
