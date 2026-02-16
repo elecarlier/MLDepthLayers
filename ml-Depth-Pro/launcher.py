@@ -4,7 +4,6 @@ Launcher complet pour générer des cartes de profondeur.
 
 """
 
-
 from dilate_image import dilate_images
 from generate_isolated_map import (
     isolate_from_masks,
