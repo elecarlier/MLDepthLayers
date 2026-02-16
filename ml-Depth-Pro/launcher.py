@@ -2,13 +2,6 @@
 """
 Launcher complet pour générer des cartes de profondeur.
 
-Deux modes :
-1️⃣ L'utilisateur fournit un TIFF multipage → chaque page devient un PNG dans `layers_folder`.
-2️⃣ L'utilisateur fournit déjà un dossier de calques PNG/JPG → utilisé tel quel.
-
-Ensuite :
-- Chaque calque est traité par run.py
-- Les depth maps générées sont regroupées dans un TIFF multipage final
 """
 
 
@@ -21,71 +14,77 @@ from PIL import Image
 import numpy as np
 from scipy.ndimage import binary_dilation, binary_erosion, distance_transform_edt
 import sys
+from format_utils import psd_to_png 
 
 
 layers_folder = Path("input/layers_from_tiff")          # calques extraits si TIFF
 existing_layers_folder = Path("input/layers")           # calques existants
-
-# output_folder_dilated = Path("output/depth_maps_dilated")
 output_folder = Path("output/depth_maps_layers")
-final_folder = Path("output/final")
 masks_dir = Path("output/masks")                        # Les masques générés par generate_masks.py
 
-
 output_folder.mkdir(parents=True, exist_ok=True)
-final_folder.mkdir(parents=True, exist_ok=True)
 masks_dir.mkdir(parents=True, exist_ok=True)
 
+# ---------------------------
+# Parsing arguments 
+# ---------------------------
 
+args = sys.argv[1:]
 
+do_side_by_side = False
+psd_path = None
 
-images_folder = Path("input/images")
-image_files = sorted(images_folder.glob("*.*"))
+for arg in args:
+    if arg == "-s":
+        do_side_by_side = True
+    else:
+        psd_path = Path(arg)
 
-# --------------------------------------------------
-# Cas 1 : une image globale existe dans input/images
-# --------------------------------------------------
-if image_files:
-    global_image = image_files[0]
-    print(f"Image globale trouvée : {global_image}")
+if psd_path is None:
+    raise RuntimeError("❌ Tu dois fournir le chemin vers un fichier PSD")
 
-# --------------------------------------------------
-# Cas 2 : aucune image globale → on prend la dernière layer
-# --------------------------------------------------
-else:
-    print("Aucune image dans input/images.")
-    print("Utilisation de la dernière image du dossier input/layers comme globale.")
+if not psd_path.exists():
+    raise RuntimeError(f"❌ Fichier introuvable : {psd_path}")
 
-    layer_files = sorted(existing_layers_folder.glob("*.*"))
+if psd_path.suffix.lower() != ".psd":
+    raise RuntimeError("❌ Le fichier fourni n'est pas un PSD")
 
-    if not layer_files:
-        raise RuntimeError("Aucune image trouvée ni dans input/images ni dans input/layers.")
+print(f"PSD reçu : {psd_path}")
+print(f"Side-by-side activé : {do_side_by_side}")
 
-    global_image = layer_files[-1]  # dernière image alphabétique
-    print(f"Image globale auto-définie : {global_image}")
-
+final_folder = psd_path.parent
+print(f"Dossier final : {final_folder}")
 
 # ---------------------------
-# Detection du mode
+# Extraction PSD → PNG layers
 # ---------------------------
-if global_image.suffix.lower() in [".tif", ".tiff"]:
-    print(f"TIFF détecté : {global_image}, extraction des pages...")
-    tiff_to_pngs(global_image, layers_folder)
-    processing_folder = layers_folder
+existing_layers_folder.mkdir(parents=True, exist_ok=True)
 
-# Mode photo globale PNG/JPG
-else:
-    print(f"Photo globale détectée : {global_image}")
-    # Les calques existants + la photo globale
-    #changing to exp
-    processing_folder = existing_layers_folder
-    extra_images = [global_image]
+for f in existing_layers_folder.glob("*"):
+    f.unlink()
+
+psd_to_png(psd_path, existing_layers_folder)
+
+processing_folder = existing_layers_folder
+image_paths = sorted(processing_folder.glob("*.png"))
+
+if not image_paths:
+    raise RuntimeError("❌ Aucun layer extrait du PSD")
+
+print(f"✅ {len(image_paths)} layers extraits.")
+
+print("Utilisation de la dernière image du dossier input/layers comme globale.")
+
+layer_files = sorted(existing_layers_folder.glob("*.*"))
+
+if not layer_files:
+    raise RuntimeError("Aucune image trouvée ni dans input/images ni dans input/layers.")
+
+global_image = layer_files[-1]  # dernière image alphabétique
+print(f"Image globale auto-définie : {global_image}")
 
 
 image_paths = sorted(processing_folder.glob("*.*"))
-do_side_by_side = "-s" in sys.argv
-if not do_side_by_side and global_image not in image_paths:
-    image_paths += extra_images
 
 if not image_paths:
     raise RuntimeError("Aucun fichier à traiter !")
@@ -97,7 +96,7 @@ print(f"Found {len(image_paths)} images à traiter.")
 # Générer les masques avec generate_masks.py
 # ---------------------------
 
-print("✅ Génération des masques...")
+print("Génération des masques...")
 subprocess.run([sys.executable, "generate_masks.py", "--output", str(masks_dir)])
 print("✅ Masques générés dans", masks_dir)
 
@@ -111,7 +110,7 @@ for mask_file in masks_dir.glob("*.png"):
 # ---------------------------
 # Génération des depth maps 
 # ---------------------------
-print("✅ Génération des cartes de profondeur...")
+print("Génération des cartes de profondeur...")
 for image_path in image_paths:
     print(f"Processing {image_path.name} ...")
 
@@ -122,6 +121,7 @@ for image_path in image_paths:
         "-o", str(output_folder),
         "--skip-display"
     ])
+print("✅ Cartes de profondeur générées dans", output_folder)
 
 # ---------------------------
 # Dilatation des depths maps 
@@ -139,7 +139,7 @@ for image_path in image_paths:
 # ---------------------------
 # Génération side-by-side pour la photo globale
 # ---------------------------
-if "-s" in sys.argv:
+if do_side_by_side:
     print("Génération side-by-side pour la photo globale")
     subprocess.run([
         sys.executable, "run.py",
@@ -155,36 +155,12 @@ else:
 # ---------------------------
 # Génération des depth maps isolées
 # ---------------------------
-print("✅ Génération des cartes de profondeur isolées...")
+print("Génération des cartes de profondeur isolées...")
 
 isolate_from_masks()
 
-# ---------------------------
-# Création TIFF multipage final
-# ---------------------------
-
-# def load_image(path):
-#     return np.array(Image.open(path))
-
-# # Récupérer toutes les images générées
-# layer_images = sorted(output_folder.glob("*.*"))
-# layer_images = [p for p in layer_images if p.suffix.lower() in [".png", ".jpg", ".jpeg"]]
-
-# if not layer_images:
-#     raise RuntimeError("❌ Aucun fichier depth map trouvé pour créer le TIFF multipage")
+print("✅ Cartes de profondeur isolées générées dans", output_folder)
 
 
-# pages = [load_image(p) for p in layer_images]
-# photometric = "rgb" if pages[0].ndim == 3 else "minisblack"
-
-# output_tiff = final_folder / "layers_stack.tif"
-# tiff.imwrite(
-#     output_tiff,
-#     pages,
-#     photometric=photometric,
-#     bigtiff=True  # ✅ permet de dépasser la limite de 4 Go
-# )
-
-# print(f"✅ TIFF multipage final créé : {output_tiff}")
 
 print("Terminé")
