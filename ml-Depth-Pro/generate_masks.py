@@ -3,11 +3,6 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 
-
-
-# Charger depth map (exportée par Depth Pro)
-# depth = np.array(Image.open("Output/depth.png")).astype(np.float32)
-
 def inspect_mask(mask, name="mask"):
     """
     Affiche les infos essentielles d'un masque numpy et quelques pixels pour comprendre.
@@ -46,7 +41,7 @@ for filename in os.listdir(masks_dir):
 
     name = os.path.splitext(filename)[0]
     masks[name] = mask
-    inspect_mask(mask, name)
+    # inspect_mask(mask, name)
 
 plt.figure(figsize=(12, 4))
 

@@ -5,9 +5,9 @@ import tifffile as tiff
 from PIL import Image
 
 
-final_folder = Path("/Users/eleonore/MLDepthLayers/ml-Depth-Pro/output/final")
+final_folder = Path("/Users/eleonore/MLDepthLayers/ml-Depth-Pro/output/final/")
 
-tiff_files = sorted(final_folder.glob("*.tif"))
+tiff_files = sorted(final_folder.glob("*.tiff"))
 
 if not tiff_files:
     raise RuntimeError(f"Aucun TIFF trouvé dans {final_folder}")
