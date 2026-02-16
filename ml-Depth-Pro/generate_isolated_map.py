@@ -13,7 +13,7 @@ def isolate_from_masks(
 
     if global_images:
         image_path = os.path.join(images_dir, global_images[0])
-    else
+    else:
         fallback_images = [f for f in os.listdir(fallback_dir) if f.lower().endswith((".jpg", ".png", ".jpeg"))]
         if not fallback_images:
             raise ValueError(f"Aucune image trouvée ni dans {images_dir} ni dans {fallback_dir}")
