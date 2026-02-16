@@ -6,7 +6,10 @@ Launcher complet pour générer des cartes de profondeur.
 
 
 from dilate_image import dilate_images
-from generate_isolated_map import isolate_from_masks
+from generate_isolated_map import (
+    isolate_from_masks,
+    isolate_all_depths,
+)
 import subprocess
 from pathlib import Path
 import tifffile as tiff
@@ -14,7 +17,7 @@ from PIL import Image
 import numpy as np
 from scipy.ndimage import binary_dilation, binary_erosion, distance_transform_edt
 import sys
-from format_utils import psd_to_png 
+from format_utils import psd_to_png, export_final_folders
 
 
 layers_folder = Path("input/layers_from_tiff")          # calques extraits si TIFF
@@ -123,6 +126,18 @@ for image_path in image_paths:
     ])
 print("✅ Cartes de profondeur générées dans", output_folder)
 
+
+print("Isolation des depth maps par layer...")
+
+isolate_all_depths(
+    depth_dir=output_folder,
+    masks_dir=masks_dir,
+    output_dir="output/isolated_layers"
+)
+
+print("✅ Isolation layers terminée.")
+
+
 # ---------------------------
 # Dilatation des depths maps 
 # ---------------------------
@@ -161,6 +176,14 @@ isolate_from_masks()
 
 print("✅ Cartes de profondeur isolées générées dans", output_folder)
 
+print("Création des dossiers finaux...")
 
+export_final_folders(
+    psd_path=psd_path,
+    isolated_global_dir="output/isolated_global",
+    isolated_layers_dir="output/isolated_layers",
+)
+
+print("✅ Dossiers finaux prêts.")
 
 print("Terminé")

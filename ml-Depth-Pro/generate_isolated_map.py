@@ -6,7 +6,7 @@ def isolate_from_masks(
     images_dir="output/final",
     fallback_dir="output/depth_maps_layers",
     masks_dir="output/masks",
-    output_dir="output/isolated",
+    output_dir="output/isolated_global",
 ):
     os.makedirs(output_dir, exist_ok=True)
 
@@ -84,7 +84,7 @@ def isolate_single_depth(depth_path, mask_path, output_path):
 def isolate_all_depths(
     depth_dir="output/depth_maps_layers",
     masks_dir="output/masks",
-    output_dir="output/test",
+    output_dir="output/isolated_maps",
 ):
     """
     Applique l'isolation à toutes les depth maps trouvées.
