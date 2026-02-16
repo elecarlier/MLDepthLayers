@@ -61,7 +61,7 @@ def clean_name(filename):
     name = name.replace("_mask", "")
     name = name.replace("_isolated", "")
 
-    return f"{name}_map.png"
+    return f"{name} map.png"
 
 
 def export_final_folders(
@@ -86,7 +86,7 @@ def export_final_folders(
     global_dir.mkdir(exist_ok=True)
     layers_dir.mkdir(exist_ok=True)
 
-    # Nettoyage optionnel (recommandé)
+    # Nettoyage
     for f in global_dir.glob("*"):
         f.unlink()
     for f in layers_dir.glob("*"):
