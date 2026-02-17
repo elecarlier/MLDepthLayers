@@ -25,18 +25,21 @@ Il inclut notamment `ml-depth-pro`, utilisé pour générer des cartes de profon
 
 
 
+
+
+
 ## 1. Récupérer le projet
 
 Rendez-vous sur le dépôt GitHub :
 
-👉 https://github.com/elecarlier/MLDepthLayers
+👉 https://github.com/elecarlier/lenticular_photgraphy
 
 ### Option A — Vous avez un compte GitHub (recommandé)
 
 Dans un terminal :
 
 ```bash
-git clone https://github.com/elecarlier/MLDepthLayers
+git clonehttps://github.com/elecarlier/MLDepthLayers
 cd MLDepthLayers
 ```
 
@@ -50,10 +53,10 @@ Décompressez l’archive dans le dossier de votre choix
 
 ## 2. Contenu du dépot
 Vous venez de télécharger les fichiers sources.  
-A l'intérieur, vous trouverez des dossiers différents:
+A l'intérieur, vous trouverez 3 dossiers différents:
 
 ml-Deptth-Pro : création des cartes de profondeur
-...:
+Midas-Master_3.1 :
 
 
 Nous allons commencer par l'instalaion de ces différents projets.
@@ -150,16 +153,22 @@ b) Installer les dépendances
 
 Toujours depuis la racine de ml-Depth-Pro/ :
 
+
+Créer l'environnement Conda
 ```bash
-# Créer l'environnement Conda
 conda env create -f environment.yml
+```
 
-# Activer l'environnement
+Activer l'environnement
+```bash
 conda activate ml-depth-pro
+```
 
-# Installer le package Python défini par pyproject.toml
+Installer le package Python défini par pyproject.toml
+```bash
 pip install -e .
 ```
+
 Cela installe :
 
 l’environnement Conda
@@ -203,11 +212,13 @@ Vous pouvez ensuite lancer le projet avec la commande :
 
 ```bash
 # Logs détaillés et side-by-side activé
+```bash
 python launcher.py -v -s path/to/PSD.psd
 
 # Pipeline minimal
+```bash
 python launcher.py path/to/PSD.psd
-
+```
 avec path/to/PSD.psd comme étant le chemin vers votre image
 
 
