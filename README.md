@@ -210,12 +210,12 @@ Vous devriez voir un fichier depth_pro.pt
 
 Vous pouvez ensuite lancer le projet avec la commande :
 
-```bash
-# Logs détaillés et side-by-side activé
+
+Logs détaillés et side-by-side activé
 ```bash
 python launcher.py -v -s path/to/PSD.psd
-
-# Pipeline minimal
+```
+Pipeline minimal
 ```bash
 python launcher.py path/to/PSD.psd
 ```
