@@ -147,9 +147,9 @@ def run(args):
 
             side_by_side = np.concatenate((img_float32_uint8, right_side_array), axis=1)
 
-            plt.imshow(side_by_side)
-            plt.axis('off')
-            plt.show()
+            # plt.imshow(side_by_side)
+            # plt.axis('off')
+            # plt.show()
             PIL.Image.fromarray(side_by_side).save(lookingGlass_output_file, format="JPEG", quality=90)
             
             
