@@ -280,7 +280,17 @@ def main():
 
     logger.info(f"PSD reçu : {psd_path}")
     logger.info(f"Side-by-side activé : {do_side_by_side}")
-
+    
+    for d in [
+        existing_layers_folder,
+        output_folder,
+        masks_dir,
+        Path("output/isolated_global"),
+        Path("output/isolated_layers"),
+        Path("output/final")  # dossier central pour fallback
+    ]:
+        d.mkdir(parents=True, exist_ok=True)
+        
     final_folder = psd_path.parent
 
     image_paths, global_image = extract_layers(psd_path)
