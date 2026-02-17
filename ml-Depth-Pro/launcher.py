@@ -16,6 +16,8 @@ Pipeline complet :
 # Imports des modules internes
 # ============================
 
+import argparse
+import logging
 from dilate_image import dilate_images #optionnel
 
 from generate_isolated_map import (
@@ -30,6 +32,22 @@ import numpy as np
 from scipy.ndimage import binary_dilation, binary_erosion, distance_transform_edt
 import sys
 from format_utils import psd_to_png, export_final_folders
+
+# ============================
+# Configuration Logging
+# ============================
+
+def setup_logging():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+    return logging.getLogger(__name__)
+
+
+logger = setup_logging()
+psd_logger = logging.getLogger("psd_tools")
+psd_logger.setLevel(logging.WARNING)  # ignore les messages “Unknown image resource”
 
 # ============================
 # Définition des dossiers
@@ -52,67 +70,61 @@ Arguments attendus :
 - Chemin vers un fichier PSD (obligatoire)
 - Option -s (facultative) : active la génération side-by-side
 """
-args = sys.argv[1:]
+def parse_arguments():
 
-do_side_by_side = False
-psd_path = None
+    parser = argparse.ArgumentParser(
+        description="Génère des cartes de profondeur à partir d’un PSD."
+    )
 
-for arg in args:
-    if arg == "-s":
-        do_side_by_side = True
-    else:
-        psd_path = Path(arg)
+    parser.add_argument(
+        "psd_path",
+        type=Path,
+        help="Chemin vers le fichier PSD"
+    )
 
-if psd_path is None:
-    raise RuntimeError("❌ Tu dois fournir le chemin vers un fichier PSD")
+    parser.add_argument(
+        "-s",
+        "--side-by-side",
+        action="store_true",
+        help="Génère une image side-by-side pour la globale"
+    )
 
-if not psd_path.exists():
-    raise RuntimeError(f"❌ Fichier introuvable : {psd_path}")
+    return parser.parse_args()
 
-if psd_path.suffix.lower() != ".psd":
-    raise RuntimeError("❌ Le fichier fourni n'est pas un PSD")
-
-print(f"PSD reçu : {psd_path}")
-print(f"Side-by-side activé : {do_side_by_side}")
-
-final_folder = psd_path.parent # Le dossier final correspond au dossier contenant le PSD
-print(f"Dossier final : {final_folder}")
 
 # ---------------------------
 # Extraction PSD → PNG layers
 # ---------------------------
-"""
-On convertit chaque layer du PSD en image PNG.
-On vide d'abord le dossier pour éviter d'utiliser d'anciens fichiers.
-"""
 
-existing_layers_folder.mkdir(parents=True, exist_ok=True)
+def extract_layers(psd_path: Path):
+    logger.info("Extraction des layers PSD → PNG")
 
-for f in existing_layers_folder.glob("*"):
-    f.unlink()
+    existing_layers_folder.mkdir(parents=True, exist_ok=True)
 
-psd_to_png(psd_path, existing_layers_folder)
+    # Nettoyage dossier
+    for f in existing_layers_folder.glob("*"):
+        f.unlink()
 
-processing_folder = existing_layers_folder
-image_paths = sorted(processing_folder.glob("*.png"))
+    psd_to_png(psd_path, existing_layers_folder)
 
-if not image_paths:
-    raise RuntimeError("❌ Aucun layer extrait du PSD")
+    image_paths = sorted(existing_layers_folder.glob("*.png"))
 
-print(f"✅ {len(image_paths)} layers extraits.")
+    if not image_paths:
+        logger.error("Aucun layer extrait du PSD")
+        raise RuntimeError("Aucun layer extrait du PSD")
 
+    logger.info(f"{len(image_paths)} layers extraits.")
 
-# On considère la dernière image (alphabétiquement) comme image globale
-layer_files = sorted(existing_layers_folder.glob("*.*"))
+    layer_files = sorted(existing_layers_folder.glob("*.*"))
 
-if not layer_files:
-    raise RuntimeError("Aucune image trouvée.")
+    if not layer_files:
+        logger.error("Aucune image trouvée.")
+        raise RuntimeError("Aucune image trouvée.")
 
-global_image = layer_files[-1]  # dernière image alphabétique
-print(f"Image globale auto-définie : {global_image}")
+    global_image = layer_files[-1]
+    logger.info(f"Image globale auto-définie : {global_image}")
 
-
-print(f"Found {len(image_paths)} images à traiter.")
+    return image_paths, global_image
 
 
 # ---------------------------
@@ -122,16 +134,25 @@ print(f"Found {len(image_paths)} images à traiter.")
 On lance le script generate_masks.py qui produit un masque binaire
 pour chaque layer dans le dossier output/masks.
 """
+def generate_masks():
+    logger.info("Génération des masques...")
 
-print("Génération des masques...")
-subprocess.run([sys.executable, "generate_masks.py", "--output", str(masks_dir)])
-print("✅ Masques générés dans", masks_dir)
+    subprocess.run(
+        [sys.executable, "generate_masks.py", "--output", str(masks_dir)],
+        check=True
+    )
 
-masks = {}
-for mask_file in masks_dir.glob("*.png"):
-    name = mask_file.stem.replace("_mask", "")
-    mask_img = Image.open(mask_file).convert("L")
-    masks[name] = (np.array(mask_img) > 0).astype(np.uint8)
+    logger.info("Masques générés dans output/masks")
+
+    masks = {}
+
+    for mask_file in masks_dir.glob("*.png"):
+        name = mask_file.stem.replace("_mask", "")
+        mask_img = Image.open(mask_file).convert("L")
+        masks[name] = (np.array(mask_img) > 0).astype(np.uint8)
+
+    logger.info(f"{len(masks)} masques chargés en mémoire.")
+    return masks
 
 
 # ---------------------------
@@ -143,18 +164,21 @@ Pour chaque layer PNG :
 - run.py génère une depth map correspondante
 """
 
-print("Génération des cartes de profondeur...")
-for image_path in image_paths:
-    print(f"Processing {image_path.name} ...")
+def generate_depth_maps(image_paths):
+    logger.info("Génération des cartes de profondeur...")
 
-    depth_path = output_folder / f"{image_path.stem}_map.jpg"
-    subprocess.run([
-        sys.executable, "run.py",
-        "-i", str(image_path),
-        "-o", str(output_folder),
-        "--skip-display"
-    ])
-print("✅ Cartes de profondeur générées dans", output_folder)
+    for image_path in image_paths:
+        logger.info(f"Processing {image_path.name}")
+
+        subprocess.run([
+            sys.executable,
+            "run.py",
+            "-i", str(image_path),
+            "-o", str(output_folder),
+            "--skip-display"
+        ], check=True)
+
+    logger.info("Cartes de profondeur générées.")
 
 # ============================
 # Isolation des depth maps par layer
@@ -164,16 +188,16 @@ print("✅ Cartes de profondeur générées dans", output_folder)
 On applique les masques aux depth maps afin d’obtenir :
 - Une depth map isolée par layer
 """
+def isolate_layers():
+    logger.info("Isolation des depth maps par layer...")
 
-print("Isolation des depth maps par layer...")
+    isolate_all_depths(
+        depth_dir=output_folder,
+        masks_dir=masks_dir,
+        output_dir="output/isolated_layers"
+    )
 
-isolate_all_depths(
-    depth_dir=output_folder,
-    masks_dir=masks_dir,
-    output_dir="output/isolated_layers"
-)
-
-print("✅ Isolation layers terminée.")
+    logger.info("Isolation layers terminée.")
 
 
 # ---------------------------
@@ -186,27 +210,20 @@ On génère une image combinée (original + depth map)
 pour l'image globale uniquement.
 """
 
-if do_side_by_side:
-    print("Génération side-by-side pour la photo globale")
+def generate_side_by_side(global_image: Path, final_folder: Path):
+    logger.info("Génération side-by-side pour la photo globale")
+
     subprocess.run([
-        sys.executable, "run.py",
+        sys.executable,
+        "run.py",
         "-i", str(global_image),
         "-o", str(final_folder),
-        "-s",                
+        "-s",
         "--skip-display"
-    ])
-else:
-    print("⚠️ Side-by-side non généré (pas d'argument -s)")
+    ], check=True)
 
+    logger.info("Side-by-side généré.")
 
-# ---------------------------
-# Génération des depth maps isolées
-# ---------------------------
-print("Génération des cartes de profondeur isolées...")
-
-isolate_from_masks()
-
-print("✅ Cartes de profondeur isolées générées dans", output_folder)
 
 
 # ============================
@@ -217,15 +234,56 @@ print("✅ Cartes de profondeur isolées générées dans", output_folder)
 On organise les résultats finaux dans une structure propre
 à côté du PSD original.
 """
+def export_results(psd_path: Path):
+    logger.info("Création des dossiers finaux...")
 
-print("Création des dossiers finaux...")
+    export_final_folders(
+        psd_path=psd_path,
+        isolated_global_dir="output/isolated_global",
+        isolated_layers_dir="output/isolated_layers",
+    )
 
-export_final_folders(
-    psd_path=psd_path,
-    isolated_global_dir="output/isolated_global",
-    isolated_layers_dir="output/isolated_layers",
-)
+    logger.info("Dossiers finaux prêts.")
 
-print("✅ Dossiers finaux prêts.")
 
-print("Terminé")
+
+def main():
+    args = parse_arguments()
+
+    psd_path = args.psd_path
+    do_side_by_side = args.side_by_side
+
+    if not psd_path.exists():
+        logger.error(f"Fichier introuvable : {psd_path}")
+        raise RuntimeError(f"Fichier introuvable : {psd_path}")
+
+    if psd_path.suffix.lower() != ".psd":
+        logger.error("Le fichier fourni n'est pas un PSD")
+        raise RuntimeError("Le fichier fourni n'est pas un PSD")
+
+    logger.info(f"PSD reçu : {psd_path}")
+    logger.info(f"Side-by-side activé : {do_side_by_side}")
+
+    final_folder = psd_path.parent
+
+    image_paths, global_image = extract_layers(psd_path)
+    generate_masks()
+    generate_depth_maps(image_paths)
+    isolate_layers()
+
+    if do_side_by_side:
+        generate_side_by_side(global_image, final_folder)
+    else:
+        logger.warning("Side-by-side non généré (pas d'argument -s)")
+
+    logger.info("Génération des cartes de profondeur isolées...")
+    isolate_from_masks()
+    logger.info("Cartes de profondeur isolées générées.")
+
+    export_results(psd_path)
+
+    logger.info("Pipeline terminé avec succès.")
+
+
+if __name__ == "__main__":
+    main()
