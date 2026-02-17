@@ -53,10 +53,10 @@ Décompressez l’archive dans le dossier de votre choix
 
 ## 2. Contenu du dépot
 Vous venez de télécharger les fichiers sources.  
-A l'intérieur, vous trouverez 3 dossiers différents:
+A l'intérieur, vous trouverez des dossiers différents:
 
 ml-Deptth-Pro : création des cartes de profondeur
-Midas-Master_3.1 :
+...:
 
 
 Nous allons commencer par l'instalaion de ces différents projets.
