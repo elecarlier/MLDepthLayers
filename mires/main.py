@@ -11,6 +11,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image ,ImageDraw, ImageFont, ImageOps
 
+from mires.images_utils import load_image, get_dpi, trim_image, add_border
+from mires.layout_utils import compute_lens_width, compute_max_copies
 
 
 def Set_tiff_voxel_size(file_path, ResX, ResY):
