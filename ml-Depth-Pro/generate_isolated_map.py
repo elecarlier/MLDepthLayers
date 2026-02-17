@@ -8,6 +8,9 @@ def isolate_from_masks(
     masks_dir="output/masks",
     output_dir="output/isolated_global",
 ):
+    os.makedirs(images_dir, exist_ok=True)
+    os.makedirs(fallback_dir, exist_ok=True)
+    os.makedirs(masks_dir, exist_ok=True)
     os.makedirs(output_dir, exist_ok=True)
 
     global_images = [f for f in os.listdir(images_dir) if f.endswith("_map.jpg")]
