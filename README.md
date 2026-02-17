@@ -205,11 +205,13 @@ Vous devriez voir un fichier depth_pro.pt
 Vous pouvez ensuite lancer le projet avec la commande :
 
 ```bash
-python launcher.py --image-path -s
-````
+# Logs détaillés et side-by-side activé
+python launcher.py -v -s path/to/PSD.psd
 
-avec --image-path  (obligatoire) comme étant le chemin vers l'image 
-     -s (optionnel) si vous souaitez généré l'imagle global côte-à-côte (RGB + Profondeur)
+# Pipeline minimal
+python launcher.py path/to/PSD.psd
+
+avec path/to/PSD.psd comme étant le chemin vers votre image
 
 
 Pour vider le contenu des dossiers input et output, veuillez utilisez le script prévu à cet effet:
@@ -218,3 +220,6 @@ Pour vider le contenu des dossiers input et output, veuillez utilisez le script 
 python cleanup.py
 ```
 
+## Documentation Complète
+
+Pour une explication détaillée du pipeline, des options, et du flux des fichiers, consultez le fichier [documentation.md](ml-Depth-pro/documentation.md) dans ce dépôt.
