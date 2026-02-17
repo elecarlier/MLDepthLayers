@@ -11,8 +11,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image ,ImageDraw, ImageFont, ImageOps
 
-from mires.images_utils import load_image, get_dpi, trim_image, add_border
-from mires.layout_utils import compute_lens_width, compute_max_copies
+from images_utils import load_image, get_dpi, trim_image, add_border
+from layout_utils import compute_lens_width, compute_max_copies
 
 
 def Set_tiff_voxel_size(file_path, ResX, ResY):
@@ -85,6 +85,13 @@ def run(args):
         
         Hdpi = TmpImage1.info.get('dpi', (args.HDPI, args.VDPI))[0]
         Vdpi = TmpImage1.info.get('dpi', (args.HDPI, args.VDPI))[1]
+
+
+        '''
+        Pour l'impression
+        DPI horizontal	TmpImage1.info.get('dpi')[0] ou --HDPI	720
+        DPI vertical	TmpImage1.info.get('dpi')[1] ou --VDPI	360
+        '''
         
     except IOError:
         print("Fichier mire non trouvé")
@@ -98,7 +105,7 @@ def run(args):
     if args.VDPI >= 0:
         Vdpi = args.VDPI
         
-    print("Desité de points (DPI)", Hdpi, Vdpi)
+    print("Densité de points (DPI)", Hdpi, Vdpi)
 
     LensWidthInPixels = Hdpi/args.LPI #nombre réel ie pas un entier
 
@@ -217,8 +224,12 @@ def run(args):
 
     # n calcule les tailles des images en pixels
 
+    '''
+    Largeur de la mire	TmpImage1.size[0]	17280 px
+    Hauteur de la mire	TmpImage1.size[1]	8055 px
+    '''
     a1, b1 = img1.size
-    print("Taille de la mire", a1,b1)
+    print("Taille de la mire en px", a1,b1)
     
 
     #
@@ -563,13 +574,13 @@ def main():
     parser.add_argument(
         "--HDPI",
         type=int,
-        default=-1,
+        default=720,
         help="Résolution horizontale d'impression."
     )
     parser.add_argument(
         "--VDPI",
         type=int,
-        default=-1,
+        default=360,
         help="Résolution verticale d'impression."
     )
     parser.add_argument(
