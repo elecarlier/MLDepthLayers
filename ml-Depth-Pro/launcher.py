@@ -32,6 +32,7 @@ import numpy as np
 from scipy.ndimage import binary_dilation, binary_erosion, distance_transform_edt
 import sys
 from format_utils import psd_to_png, export_final_folders
+from cleanup import clean_input_output
 
 # ============================
 # Configuration Logging
@@ -101,6 +102,12 @@ def parse_arguments():
         action="store_true",
         help="Afficher les logs détaillés pendant l'exécution"
     )
+    parser.add_argument(
+        "-c", "--cleanup",
+        action="store_true",
+        help="Nettoyer les dossiers input/output avant de commencer"
+    )
+
     return parser.parse_args()
 
 
@@ -261,9 +268,14 @@ def export_results(psd_path: Path):
 
 def main():
 
+
+
     global logger
     args = parse_arguments() 
-
+    
+    if args.cleanup:
+        print("🧹 Nettoyage des dossiers avant exécution...")
+        subprocess.run([sys.executable, "cleanup.py"], check=True)
 
     logger = setup_logging(verbose=args.verbose)
 
@@ -290,7 +302,7 @@ def main():
         Path("output/final")  # dossier central pour fallback
     ]:
         d.mkdir(parents=True, exist_ok=True)
-        
+
     final_folder = psd_path.parent
 
     image_paths, global_image = extract_layers(psd_path)
