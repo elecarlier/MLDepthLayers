@@ -1,9 +1,17 @@
 from psd_tools import PSDImage
 from pathlib import Path
 from PIL import Image
-
-import os
 import shutil
+import logging
+
+# ============================
+# Logger
+# ============================
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 
 # ---------------------------
@@ -25,7 +33,7 @@ def psd_to_png(input_psd: Path, output_folder: Path):
             if not layer.is_visible():
                 continue
             if layer.is_group():
-                _export_layers(layer, parent_name + layer.name + "_")
+                _export_layers(layer, parent_name + layer.name + "_")  # On parcourt récursivement les groupes
             else:
                 if layer.name.lower().endswith(" map"):
                     print(f"⚠️ Ignoré layer se terminant par ' map' : {layer.name}")
@@ -44,23 +52,22 @@ def psd_to_png(input_psd: Path, output_folder: Path):
     _export_layers(psd)
 
 
-def clean_name(filename):
+# ============================
+# Nettoyage/normalisation des noms
+# ============================
+
+def clean_name(filename: str) -> str:
     """
-    Transforme :
-    0000_XXXX_mask_isolated.png
-    0000_XXXX_isolated.png
-
-    en :
-    XXXX_map.png
+    Transforme les noms de fichiers isolés en format propre pour export final :
+    Ex: 0000_XXXX_mask_isolated.png -> XXXX_map.png
     """
+    name = Path(filename).stem  # enlève l'extension .png
 
-    name = Path(filename).stem  # enlève .png
-
-    # Supprime index (0000_)
+    # Supprime l'index initial (ex: 0000_)
     if "_" in name:
         name = name.split("_", 1)[1]
 
-    # Supprime suffixes
+    # Supprime les suffixes internes
     name = name.replace("_mask", "")
     name = name.replace("_isolated", "")
 
@@ -89,25 +96,24 @@ def export_final_folders(
     global_dir.mkdir(exist_ok=True)
     layers_dir.mkdir(exist_ok=True)
 
-    # Nettoyage
+
     for f in global_dir.glob("*"):
         f.unlink()
     for f in layers_dir.glob("*"):
         f.unlink()
 
-    # ---- GLOBAL ----
     for file in Path(isolated_global_dir).glob("*.png"):
         new_name = clean_name(file.name)
         shutil.copy(file, global_dir / new_name)
 
-    # ---- LAYERS ----
+
     for file in Path(isolated_layers_dir).glob("*.png"):
         new_name = clean_name(file.name)
         shutil.copy(file, layers_dir / new_name)
-
-    print("✅ Export final terminé.")
-    print("📁 Global :", global_dir)
-    print("📁 Layers :", layers_dir)
+        
+    logger.info("✅ Export final terminé.")
+    logger.info(f"📁 Global : {global_dir}")
+    logger.info(f"📁 Layers : {layers_dir}")
 
 
 if __name__ == "__main__":
