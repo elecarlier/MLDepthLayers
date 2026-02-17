@@ -36,7 +36,7 @@ def psd_to_png(input_psd: Path, output_folder: Path):
                 _export_layers(layer, parent_name + layer.name + "_")  # On parcourt récursivement les groupes
             else:
                 if layer.name.lower().endswith(" map"):
-                    print(f"⚠️ Ignoré layer se terminant par ' map' : {layer.name}")
+                    logger.warning(f"Ignoré layer se terminant par ' map' : {layer.name}")
                     continue
                 layer_image = layer.composite()
                 if layer_image:
@@ -46,7 +46,7 @@ def psd_to_png(input_psd: Path, output_folder: Path):
 
                     filename = f"{idx:04d}_{parent_name}{layer.name}.png".replace("/", "_")
                     full_image.save(output_folder / filename)
-                    print(f"Saved: {filename}")
+                    logger.debug(f"Saved: {filename}")
                     idx += 1
 
     _export_layers(psd)
@@ -110,10 +110,10 @@ def export_final_folders(
     for file in Path(isolated_layers_dir).glob("*.png"):
         new_name = clean_name(file.name)
         shutil.copy(file, layers_dir / new_name)
-        
-    logger.info("✅ Export final terminé.")
-    logger.info(f"📁 Global : {global_dir}")
-    logger.info(f"📁 Layers : {layers_dir}")
+
+    logger.debug("✅ Export final terminé.")
+    logger.debug(f"📁 Global : {global_dir}")
+    logger.debug(f"📁 Layers : {layers_dir}")
 
 
 if __name__ == "__main__":

@@ -37,12 +37,23 @@ from format_utils import psd_to_png, export_final_folders
 # Configuration Logging
 # ============================
 
-def setup_logging():
+def setup_logging(verbose=False):
+    level = logging.INFO if verbose else logging.WARNING
     logging.basicConfig(
-        level=logging.INFO,
+        level=level,
         format="%(asctime)s - %(levelname)s - %(message)s",
     )
-    return logging.getLogger(__name__)
+    logger = logging.getLogger(__name__)
+    
+    # Masquer psd_tools info
+    psd_logger = logging.getLogger("psd_tools")
+    psd_logger.setLevel(logging.WARNING)
+    
+    # Masquer PIL info
+    pil_logger = logging.getLogger("PIL")
+    pil_logger.setLevel(logging.WARNING)
+    
+    return logger
 
 
 logger = setup_logging()
@@ -72,23 +83,24 @@ Arguments attendus :
 """
 def parse_arguments():
 
-    parser = argparse.ArgumentParser(
-        description="Génère des cartes de profondeur à partir d’un PSD."
-    )
-
+    parser = argparse.ArgumentParser(description="Launcher Depth Pro")
     parser.add_argument(
         "psd_path",
         type=Path,
-        help="Chemin vers le fichier PSD"
+        help="Chemin vers le fichier PSD à traiter"
     )
-
     parser.add_argument(
         "-s",
-        "--side-by-side",
+        "--side",
         action="store_true",
-        help="Génère une image side-by-side pour la globale"
+        help="Générer l'image side-by-side pour la globale"
     )
-
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Afficher les logs détaillés pendant l'exécution"
+    )
     return parser.parse_args()
 
 
@@ -248,10 +260,15 @@ def export_results(psd_path: Path):
 
 
 def main():
-    args = parse_arguments()
+
+    global logger
+    args = parse_arguments() 
+
+
+    logger = setup_logging(verbose=args.verbose)
 
     psd_path = args.psd_path
-    do_side_by_side = args.side_by_side
+    do_side_by_side = args.side
 
     if not psd_path.exists():
         logger.error(f"Fichier introuvable : {psd_path}")

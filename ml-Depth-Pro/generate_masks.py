@@ -36,7 +36,7 @@ def inspect_mask(mask, name="mask"):
 masks_dir = "input/layers"  # dossier contenant les images originales
 masks = {}  # dict : key = nom du fichier, value = masque numpy 2D avec valeurs 0-1
 
-logger.info(f"Lecture des images dans {masks_dir}...")
+logger.debug(f"Lecture des images dans {masks_dir}...")
 
 for filename in os.listdir(masks_dir):
     if not filename.lower().endswith(".png"):
@@ -85,5 +85,5 @@ for name, mask in masks.items():
     img = Image.fromarray(mask_img, mode="L")  # "L" = grayscale
     save_path = os.path.join(output_dir, f"{name}_mask.png")
     img.save(save_path)
-    logger.info(f"Masque sauvegardé : {save_path}")
+    logger.debug(f"Masque sauvegardé : {save_path}")
 
