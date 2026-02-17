@@ -19,7 +19,7 @@ output*
 Input*
 Output_Done*
 input_Done*
-mires/mires_templates/*.png
+mires/mires_templates/
 
 # Archives
 *.zip
