@@ -32,7 +32,7 @@ Il inclut notamment `ml-depth-pro`, utilisé pour générer des cartes de profon
 
 Rendez-vous sur le dépôt GitHub :
 
-👉 https://github.com/elecarlier/lenticular_photgraphy
+👉 https://github.com/elecarlier/MLDepthLayers
 
 ### Option A — Vous avez un compte GitHub (recommandé)
 
