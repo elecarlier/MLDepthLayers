@@ -210,8 +210,8 @@ def run(args):
         print("Trimming", PixelsH,PixelsV,"pixels")
         img2 = img2.crop((PixelsH, PixelsV,a2-PixelsH, b2-PixelsV))
         '''
-        img2 = trim_image(img2, args.trim, Hdpi, Vdpi)
-        img2 = add_border(img2, args.border, Hdpi, Vdpi)
+        img2 = trim_image(img2, args.trim, hdpi, vdpi)
+
 
 
         a2, b2 = img2.size
@@ -221,12 +221,15 @@ def run(args):
     # Si on veut ajouter un bord [noir] aux images 
     
     if args.border >0 and args.makeshift <= 0:
+        '''
         PixelsH = int(Hdpi*args.border/25.4) # convertit les mm en pixels
         PixelsV = int(Vdpi*args.border/25.4)
         print("Adding border of", PixelsH,PixelsV,"pixels")
+    
 
         img2 = ImageOps.expand(img2, border=(PixelsH, PixelsV), fill=(0,0,0))
-        
+        '''
+        img2 = add_border(img2, args.border, hdpi, vdpi)
         a2, b2 = img2.size
         print("taille de l'image avec bordure en pixels",a2,b2)
         

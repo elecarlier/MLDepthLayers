@@ -34,6 +34,8 @@ def trim_image(img, trim_mm, hdpi, vdpi):
 
     px_h = int(hdpi * trim_mm / 25.4)
     px_v = int(vdpi * trim_mm / 25.4)
+        
+    print("Trimming", px_h, px_v,"pixels")
 
     return img.crop((px_h, px_v, img.width - px_h, img.height - px_v))
 
@@ -48,6 +50,7 @@ def add_border(img, border_mm, hdpi, vdpi):
     px_h = int(hdpi * border_mm / 25.4)
     px_v = int(vdpi * border_mm / 25.4)
 
+    print("Adding border of", px_h,px_v,"pixels")
     return ImageOps.expand(img, border=(px_h, px_v), fill=(0, 0, 0))
 
 def load_and_prepare_image(file_path: Path, trim_mm=0, border_mm=-1, dpi=(720, 360)):

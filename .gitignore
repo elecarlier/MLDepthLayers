@@ -20,7 +20,7 @@ Input*
 Output_Done*
 input_Done*
 mires/mires_templates/
-
+mires/*.png
 # Archives
 *.zip
 *.tar.gz
