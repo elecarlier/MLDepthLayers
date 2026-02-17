@@ -47,11 +47,11 @@ def psd_to_png(input_psd: Path, output_folder: Path):
 def clean_name(filename):
     """
     Transforme :
-    0000_Antenne_mask_isolated.png
-    0000_Antenne_isolated.png
+    0000_XXXX_mask_isolated.png
+    0000_XXXX_isolated.png
 
     en :
-    Antenne.png
+    XXXX_map.png
     """
 
     name = Path(filename).stem  # enlève .png
@@ -112,7 +112,7 @@ def export_final_folders(
 
 if __name__ == "__main__":
     # Extraction PSD -> PNG
-    psd_to_png(Path("input/images/Escargot.psd"), Path("input/layers"))
+    psd_to_png(Path("input/images/"), Path("input/layers"))
 
 
 
