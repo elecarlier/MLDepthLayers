@@ -10,155 +10,97 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image ,ImageDraw, ImageFont, ImageOps
-
-from images_utils import load_image, get_dpi, trim_image, add_border
+from mires_utils import calculate_copies
+from parser import parse_args
+from images_utils import (
+    load_image,
+    trim_image,
+    load_and_prepare_image,
+    get_dpi,
+    add_border,
+    compute_copies,
+    paste_images,
+)
 from layout_utils import compute_lens_width, compute_max_copies
-
-
-def Set_tiff_voxel_size(file_path, ResX, ResY):
-    """
-    Implemented based on information found in https://pypi.org/project/tifffile
-    """
-
-    def _xy_voxel_size(tags, key):
-        assert key in ['XResolution', 'YResolution']
-        if key in tags:
-            num_pixels, units = tags[key].value
-            return units / num_pixels
-        # return default
-        return 1.
-
-    with tifffile.TiffFile(file_path, mode="r+b") as tiff:
-        
-        # image = imread(file_path)
-        image_metadata = tiff.imagej_metadata
-        
-        if image_metadata is not None:
-            z = image_metadata.get('spacing', 1.)
-        else:
-            # default voxel size
-            z = 1.
-
-        tags = tiff.pages[0].tags
-
-        tagYR = tags['YResolution']
-        tagXR = tags['XResolution']
-
-        print("Trouvé : ", tagXR.value[0], tagYR.value[0], tagYR.value[1])
-
-        resUnit = int(tagYR.value[1])
-        YR0 = ResY*resUnit
-        XR0 = ResX*resUnit
-        
-        print("Nouvelles valeurs :", XR0, YR0, resUnit)
-
-        tagYR.overwrite((YR0,resUnit))
-        tagXR.overwrite((XR0,resUnit))
-        
-
-        # parse X, Y resolution
-
-        y = _xy_voxel_size(tags, 'YResolution')
-        x = _xy_voxel_size(tags, 'XResolution')
-        
-        #print (x)
-        #print (y)
-        
-        # return voxel size
-        return [z, y, x]
 
 
 def run(args):
     
-    #print(args.mire, args.image, args.LPI, args.HDPI, args.VDPI, args.tile)    
-    print()
-    
     #Leve la limite sur la taille des fichiers images
-    #Il faudra voir jusqu'où aller
-    
     Image.MAX_IMAGE_PIXELS = 2052314995
 
-    # On charge la mire pour connaître les DPI
-    
+    # Chargement de la mire pour connaitre dpi
     try:
-        TmpImage1 = Image.open(args.mire,"r")
-        
-        Hdpi = TmpImage1.info.get('dpi', (args.HDPI, args.VDPI))[0]
-        Vdpi = TmpImage1.info.get('dpi', (args.HDPI, args.VDPI))[1]
+        mire_img = load_and_prepare_image(args.mire)
+    except FileNotFoundError:
+        print(f"Mire {args.mire} non trouvée")
+        sys.exit(1)
 
+    hdpi, vdpi = get_dpi(mire_img, args.HDPI, args.VDPI)
 
-        '''
-        Pour l'impression
-        DPI horizontal	TmpImage1.info.get('dpi')[0] ou --HDPI	720
-        DPI vertical	TmpImage1.info.get('dpi')[1] ou --VDPI	360
-        '''
-        
-    except IOError:
-        print("Fichier mire non trouvé")
-        quit()
+    # Écrasement des DPI si renseignés
+    if args.HDPI >= 0: hdpi = args.HDPI
+    if args.VDPI >= 0: vdpi = args.VDPI
 
-    # On écrase les résolutions horizontales et verticales si renseignées
+    print("DPI:", hdpi, vdpi)
 
-    if args.HDPI >= 0:
-        Hdpi = args.HDPI
-        
-    if args.VDPI >= 0:
-        Vdpi = args.VDPI
-        
-    print("Densité de points (DPI)", Hdpi, Vdpi)
-
-    LensWidthInPixels = Hdpi/args.LPI #nombre réel ie pas un entier
+    LensWidthInPixels = hdpi/args.LPI #nombre réel ie pas un entier
 
     print("Largeur d'une lentille en pixels :",LensWidthInPixels)
         
     # Calcul initial du nom de fichier de sortie
     # Pour cela on détermine le nombre de lignes et colonnes
-
+    
+    #Valeur forcée
     CopiesH = args.cols
     CopiesV = args.rows
     
-    if (args.cols == 0 or args.rows == 0) and str(args.image) != "Image_centree.tif":
-        try:
-            # On charge temporairement la mire et le fichier image
-            # pour récupérer leurs caractéristiques
-            # Ensuite, on les referme            
-            #print(args.mire,args.image)
+    #@? c'est quoi image_centree
+    #
+
+    # if (args.cols == 0 or args.rows == 0) and str(args.image) != "Image_centree.tif":
+    #     try:
+    #         # On charge temporairement la mire et le fichier image
+    #         # pour récupérer leurs caractéristiques
+    #         # Ensuite, on les referme            
+    #         #print(args.mire,args.image)
                         
-            if args.makeshift <= 0:
-                # On ne fait pas une mire de callage
+    #         if args.makeshift <= 0:
+    #             # On ne fait pas une mire de callage
                 
-                TmpImage2 = Image.open(args.image,"r")
+    #             TmpImage2 = Image.open(args.image,"r")
 
-                # Si on enlève les bords de l'image2, alors on recalcule sa taille
-                # Vaudra zéro si on n'enlève rien                
-                TrimValueH = args.trim/25.4*(TmpImage1.info.get('dpi', (args.HDPI, args.VDPI))[0])
-                TrimValueV = args.trim/25.4*(TmpImage1.info.get('dpi', (args.HDPI, args.VDPI))[1])
+    #             # Si on enlève les bords de l'image2, alors on recalcule sa taille
+    #             # Vaudra zéro si on n'enlève rien                
+    #             TrimValueH = args.trim/25.4*(TmpImage1.info.get('dpi', (args.HDPI, args.VDPI))[0])
+    #             TrimValueV = args.trim/25.4*(TmpImage1.info.get('dpi', (args.HDPI, args.VDPI))[1])
                 
-                if args.cols <= 0:
-                    CopiesH = int(TmpImage1.size[0]/(TmpImage2.size[0]-TrimValueH))
-                else:
-                    CopiesH = args.cols
+    #             if args.cols <= 0:
+    #                 CopiesH = int(TmpImage1.size[0]/(TmpImage2.size[0]-TrimValueH))
+    #             else:
+    #                 CopiesH = args.cols
                     
-                if args.rows <= 0:    
-                    CopiesV = int(TmpImage1.size[1]/(TmpImage2.size[1]-TrimValueV))
-                else:
-                    CopiesV = args.rows
+    #             if args.rows <= 0:    
+    #                 CopiesV = int(TmpImage1.size[1]/(TmpImage2.size[1]-TrimValueV))
+    #             else:
+    #                 CopiesV = args.rows
                     
-                TmpImage2.close
-            else:
-                # Pour créer une mire de callage
-                CopiesH = args.makeshift
-                CopiesV = int(LensWidthInPixels)
-        except IOError:
-            print("Fichier image ou mire non trouvées")
-            quit()
+    #             TmpImage2.close
+    #         else:
+    #             # Pour créer une mire de callage
+    #             CopiesH = args.makeshift
+    #             CopiesV = int(LensWidthInPixels)
+    #     except IOError:
+    #         print("Fichier image ou mire non trouvées")
+    #         quit()
 
-    # On ferme le fichier mire
-    TmpImage1.close
-
-    #
+    # # # On ferme le fichier mire
+    # # TmpImage1.close
+    
+    CopiesH, CopiesV = calculate_copies(args.mire, args.image, args)
+    print("Colonnes calculées :", CopiesH, "Lignes calculées :", CopiesV)
     # Calcul du nom du fichier de sortie
-    #
+    
     
     if str(args.output) != "Non renseigné":
         # Le fichier de sortie est renseigné
@@ -211,7 +153,7 @@ def run(args):
 
     #
     # On ouvre le fichier mire sauf si on ajoute à output
-    # Dans ce cernieer cas, output est déjà ouvert
+    # Dans ce dernier cas, output est déjà ouvert
     #
     
     #print("NomFichierMire", NomFichierMire)
@@ -237,7 +179,7 @@ def run(args):
     #
     
     # SI on ajoute une image par --addfile
-    # aors on ouvre celui là plutôt que args.image
+    # alors on ouvre celui là plutôt que args.image
     # Dans ce cas, renseigner --cols et --row car sinon le positionnement peut être imprévisible
 
     if str(args.addfile) != "Non renseigné":
@@ -262,11 +204,16 @@ def run(args):
     # On attend des valeurs en milimètres (mm)
     
     if args.trim > 0 and args.makeshift <= 0:
+        '''
         PixelsH = int(Hdpi*args.trim/25.4) # convertit les mm en pixels
         PixelsV = int(Vdpi*args.trim/25.4)
         print("Trimming", PixelsH,PixelsV,"pixels")
-        
         img2 = img2.crop((PixelsH, PixelsV,a2-PixelsH, b2-PixelsV))
+        '''
+        img2 = trim_image(img2, args.trim, Hdpi, Vdpi)
+        img2 = add_border(img2, args.border, Hdpi, Vdpi)
+
+
         a2, b2 = img2.size
         print("taille de l'image réduite en pixels",a2,b2)
 
@@ -289,8 +236,8 @@ def run(args):
     # On divise la largeur de la mire par celle de l'image + 1 lentille
 
     if args.makeshift <= 0:
-        MaxCopiesH = int(a1/(a2+int(LensWidthInPixels)+1)) # On se réserve une lentille de marge pour ajuster
-        MaxCopiesV = int(b1/b2)
+        LensWidthInPixels = compute_lens_width(hdpi, args.LPI)
+        MaxCopiesH, MaxCopiesV = compute_max_copies(img1.size, img2.size, LensWidthInPixels)
     else:
         # Si on crée une mire de callage, alors le nombre de colonnes
         # est égal à l'argument passé dans makeshift
@@ -318,7 +265,7 @@ def run(args):
 
     # Si on a demandé de remplir la mire avec des copies de image
     # On calcule combien il estt possible d'en créer
-    # C'est le nimbre maximal - la position de départ
+    # C'est le nombre maximal - la position de départ
     
     if args.tile: 
         CopiesH = MaxCopiesH-args.HPos+1
@@ -520,155 +467,14 @@ def run(args):
         print("Le fichier de sortie :", OutputFileName)
                                         
     # Saving the image
-    # img1.save(args.output,dpi=(Hdpi,Vdpi),resolution_unit=2,compression="tiff_lzw")
-    # Attention : les fichiers Tiff générés par Python ne fonctionnent pas bien
-    # Pour cela, j'ai basculé sur un format PNG qui ne déteriore pas l'image
-    # Ne pas utiliser de Jpeg
     # On peut changer cela en précisant le nom du fichier de sortie
     
     print("On tente d'écrire le fichier", OutputFileName)
-    img1.save(OutputFileName,dpi=(Hdpi,Vdpi))
-
-    #Set_tiff_voxel_size(args.output, Hdpi, Vdpi)
-
+    img1.save(OutputFileName,dpi=(hdpi,vdpi))
 
 def main():
-    """Assemblage et alignement images sur une mire centrée"""
-    parser = argparse.ArgumentParser(
-        description="Assemblage et alignement images sur une mire centrée."
-    )
-    parser.add_argument(
-        "-m", 
-        "--mire", 
-        type=Path, 
-        default="Mire 50 LPI 711x508.tif",
-        help="Nom du fichier Frame"
-    )
-    parser.add_argument(
-        "-i",
-        "--image",
-        type=Path,
-        default="Image_centree.tif",
-        help="Nom du fichier à insérer."
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=Path,
-        default="Non renseigné",
-        help="Nom du fichier à créer. \nCalcule automatiquement un nom si non renseigné"
-    )
-    parser.add_argument(
-        "-a",
-        "--addfile",
-        type=Path,
-        default="Non renseigné",
-        help="Nom du fichier à ajouter"
-    )
-    parser.add_argument(
-        "--LPI",
-        type=float,
-        default=40.0,
-        help="Linéature apparente de la plaque (40.0 par défaut)."
-    )
-    parser.add_argument(
-        "--HDPI",
-        type=int,
-        default=720,
-        help="Résolution horizontale d'impression."
-    )
-    parser.add_argument(
-        "--VDPI",
-        type=int,
-        default=360,
-        help="Résolution verticale d'impression."
-    )
-    parser.add_argument(
-        "--HCopies", 
-        type=int,
-        default=-1,
-        help="Nombre de copies horizontales."
-    )
-    parser.add_argument(
-        "--VCopies", 
-        type=int,
-        default=-1,
-        help="Nombre de copies verticales."
-    )
-    parser.add_argument(
-        "--VPos", 
-        type=int,
-        default=1,
-        help="Position de début des copies de 1 à N. Vaut 1 par défaut"
-    )
-    parser.add_argument(
-        "--HPos", 
-        type=int,
-        default=1,
-        help="Position de début des copies de 1 à N. Vaut 1 par défaut"
-    )
-    parser.add_argument(
-        "--rows", 
-        type=int,
-        default=0,
-        help="Force le nombre de lignes d'image"
-    )
-    parser.add_argument(
-        "--cols", 
-        type=int,
-        default=0,
-        help="Force le nombre de colonnes"
-    )
-    parser.add_argument(
-        "--tile",
-        action="store_true",
-        default=False, 
-        help="cree un pavage si présent, une seule copie centrée sinon."
-    )
-    parser.add_argument(
-        "--erase",
-        action="store_true",
-        default=False, 
-        help="Efface la mire si présent."
-    )
-    parser.add_argument(
-        "--trim",
-        type=int,
-        default=0, 
-        help="Enlève [trim] mm de bord de l'image à recopier."
-    )
-    parser.add_argument(
-        "--border",
-        type=int,
-        default=-1, 
-        help="Ajoute un bord noir de [border] à l'image à recopier."
-    )
-    parser.add_argument(
-        "--add",
-        action="store_true",
-        default=False, 
-        help="Ajoute l'image aux précedentes dans le fichier Output."
-    )
-    parser.add_argument(
-        "--test",
-        action="store_true",
-        default=False, 
-        help="Calcule le nombre d'images qu'il est possible de caser dans la mire, puis quitte le programme"
-    )
-    parser.add_argument(
-        "--makeshift",
-        type=int,
-        default=-1, 
-        help="Si positif, imprime une mire pour ajuster les positions des [nombre] colonnes"
-    )
-    parser.add_argument(
-        "--shiftlist",
-        nargs="+",
-        type=int,
-        default=(-1,-1),
-        help="Liste les décalages à appliquer aux différentes colonnes (liste de valeurs entieres sans virgules)"
-    )
-    run(parser.parse_args())
+    args = parse_args()
+    run(args)
 
 
 if __name__ == "__main__":
