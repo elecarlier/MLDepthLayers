@@ -39,8 +39,8 @@ Rendez-vous sur le dépôt GitHub :
 Dans un terminal :
 
 ```bash
-git clone https://github.com/elecarlier/lenticular_photgraphy.git
-cd lenticular_photgraphy
+git clonehttps://github.com/elecarlier/MLDepthLayers
+cd MLDepthLayers
 ```
 
 
@@ -202,36 +202,19 @@ ls checkpoints/
 
 Vous devriez voir un fichier depth_pro.pt
 
+Vous pouvez ensuite lancer le projet avec la commande :
 
-L'installation est terminée. Vous pouvez lancer l’inférence sur une image avec le script run.py.
+```bash
+python launcher.py --image-path -s
+````
 
-Exemple simple:
-
-python run.py -i input/_U8A2060-Modifie.png -o Output/ -s
-
-
-| Argument               | Usage                                               |
-| ---------------------- | --------------------------------------------------- |
-| `-i` / `--image-path`  | Chemin vers l’image ou le dossier d’images d’entrée |
-| `-o` / `--output-path` | Dossier où sauver les résultats                     |
-| `--skip-display`       | Ne pas afficher les images avec matplotlib          |
-| `-v` / `--verbose`     | Afficher les logs                                   |
-| `-s` / `--side`        | Générer des images côte-à-côte (RGB + profondeur)   |
+avec --image-path  (obligatoire) comme étant le chemin vers l'image 
+     -s (optionnel) si vous souaitez généré l'imagle global côte-à-côte (RGB + Profondeur)
 
 
-Les images traitées sont dans Output/
+Pour vider le contenu des dossiers input et output, veuillez utilisez le script prévu à cet effet:
 
-Les fichiers *_map.jpg et *_lkg.jpg sont créés avec la profondeur estimée
+```bash
+python cleanup.py
+```
 
-
-
-
-```bibtex
-@article{Bochkovskii2024:arxiv,
-  author     = {Aleksei Bochkovskii and Ama\"{e}l Delaunoy and Hugo Germain and Marcel Santos and
-               Yichao Zhou and Stephan R. Richter and Vladlen Koltun}
-  title      = {Depth Pro: Sharp Monocular Metric Depth in Less Than a Second},
-  journal    = {arXiv},
-  year       = {2024},
-  url        = {https://arxiv.org/abs/2410.02073},
-}

@@ -1,10 +1,23 @@
 #!/usr/bin/env python3
 """
-Launcher complet pour générer des cartes de profondeur.
+Launcher principal pour générer des cartes de profondeur à partir d’un PSD
 
+Pipeline complet :
+1. Extraction des layers du PSD en PNG
+2. Génération des masques
+3. Génération des depth maps pour chaque layer
+4. Isolation des depth maps par masque
+5. (Optionnel) Génération d'une image side-by-side pour la globale
+6. Export final des dossiers structurés
 """
 
-from dilate_image import dilate_images
+
+# ============================
+# Imports des modules internes
+# ============================
+
+from dilate_image import dilate_images #optionnel
+
 from generate_isolated_map import (
     isolate_from_masks,
     isolate_all_depths,
@@ -18,19 +31,27 @@ from scipy.ndimage import binary_dilation, binary_erosion, distance_transform_ed
 import sys
 from format_utils import psd_to_png, export_final_folders
 
+# ============================
+# Définition des dossiers
+# ============================
 
-layers_folder = Path("input/layers_from_tiff")          # calques extraits si TIFF
-existing_layers_folder = Path("input/layers")           # calques existants
-output_folder = Path("output/depth_maps_layers")
-masks_dir = Path("output/masks")                        # Les masques générés par generate_masks.py
+existing_layers_folder = Path("input/layers")       # Dossier de travail contenant les layers PNG     
+output_folder = Path("output/depth_maps_layers")    # Dossier de sortie pour les depth maps générées
+masks_dir = Path("output/masks")                    # Dossier de sortie pour les masques générés
 
+
+# Création des dossiers si inexistants
 output_folder.mkdir(parents=True, exist_ok=True)
 masks_dir.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------
-# Parsing arguments 
+# Parsing arguments CLI
 # ---------------------------
-
+"""
+Arguments attendus :
+- Chemin vers un fichier PSD (obligatoire)
+- Option -s (facultative) : active la génération side-by-side
+"""
 args = sys.argv[1:]
 
 do_side_by_side = False
@@ -54,12 +75,17 @@ if psd_path.suffix.lower() != ".psd":
 print(f"PSD reçu : {psd_path}")
 print(f"Side-by-side activé : {do_side_by_side}")
 
-final_folder = psd_path.parent
+final_folder = psd_path.parent # Le dossier final correspond au dossier contenant le PSD
 print(f"Dossier final : {final_folder}")
 
 # ---------------------------
 # Extraction PSD → PNG layers
 # ---------------------------
+"""
+On convertit chaque layer du PSD en image PNG.
+On vide d'abord le dossier pour éviter d'utiliser d'anciens fichiers.
+"""
+
 existing_layers_folder.mkdir(parents=True, exist_ok=True)
 
 for f in existing_layers_folder.glob("*"):
@@ -75,21 +101,16 @@ if not image_paths:
 
 print(f"✅ {len(image_paths)} layers extraits.")
 
-print("Utilisation de la dernière image du dossier input/layers comme globale.")
 
+# On considère la dernière image (alphabétiquement) comme image globale
 layer_files = sorted(existing_layers_folder.glob("*.*"))
 
 if not layer_files:
-    raise RuntimeError("Aucune image trouvée ni dans input/images ni dans input/layers.")
+    raise RuntimeError("Aucune image trouvée.")
 
 global_image = layer_files[-1]  # dernière image alphabétique
 print(f"Image globale auto-définie : {global_image}")
 
-
-image_paths = sorted(processing_folder.glob("*.*"))
-
-if not image_paths:
-    raise RuntimeError("Aucun fichier à traiter !")
 
 print(f"Found {len(image_paths)} images à traiter.")
 
@@ -97,6 +118,10 @@ print(f"Found {len(image_paths)} images à traiter.")
 # ---------------------------
 # Générer les masques avec generate_masks.py
 # ---------------------------
+"""
+On lance le script generate_masks.py qui produit un masque binaire
+pour chaque layer dans le dossier output/masks.
+"""
 
 print("Génération des masques...")
 subprocess.run([sys.executable, "generate_masks.py", "--output", str(masks_dir)])
@@ -112,6 +137,12 @@ for mask_file in masks_dir.glob("*.png"):
 # ---------------------------
 # Génération des depth maps 
 # ---------------------------
+"""
+Pour chaque layer PNG :
+- On appelle run.py
+- run.py génère une depth map correspondante
+"""
+
 print("Génération des cartes de profondeur...")
 for image_path in image_paths:
     print(f"Processing {image_path.name} ...")
@@ -125,6 +156,14 @@ for image_path in image_paths:
     ])
 print("✅ Cartes de profondeur générées dans", output_folder)
 
+# ============================
+# Isolation des depth maps par layer
+# ============================
+
+"""
+On applique les masques aux depth maps afin d’obtenir :
+- Une depth map isolée par layer
+"""
 
 print("Isolation des depth maps par layer...")
 
@@ -138,21 +177,15 @@ print("✅ Isolation layers terminée.")
 
 
 # ---------------------------
-# Dilatation des depths maps 
-# ---------------------------
-# dilate_images()
-
-# Ou avec des paramètres personnalisés
-# dilate_images(
-#     input_dir="mes_images/input",
-#     output_dir="mes_images/output",
-#     scale=1.2
-#)
-
-
-# ---------------------------
 # Génération side-by-side pour la photo globale
 # ---------------------------
+
+"""
+Si l'option -s est activée :
+On génère une image combinée (original + depth map)
+pour l'image globale uniquement.
+"""
+
 if do_side_by_side:
     print("Génération side-by-side pour la photo globale")
     subprocess.run([
@@ -174,6 +207,16 @@ print("Génération des cartes de profondeur isolées...")
 isolate_from_masks()
 
 print("✅ Cartes de profondeur isolées générées dans", output_folder)
+
+
+# ============================
+# Export final des dossiers
+# ============================
+
+"""
+On organise les résultats finaux dans une structure propre
+à côté du PSD original.
+"""
 
 print("Création des dossiers finaux...")
 
