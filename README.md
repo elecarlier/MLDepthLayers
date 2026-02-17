@@ -25,9 +25,6 @@ Il inclut notamment `ml-depth-pro`, utilisé pour générer des cartes de profon
 
 
 
-
-
-
 ## 1. Récupérer le projet
 
 Rendez-vous sur le dépôt GitHub :
@@ -39,7 +36,7 @@ Rendez-vous sur le dépôt GitHub :
 Dans un terminal :
 
 ```bash
-git clonehttps://github.com/elecarlier/MLDepthLayers
+git clone https://github.com/elecarlier/MLDepthLayers
 cd MLDepthLayers
 ```
 
