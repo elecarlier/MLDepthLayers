@@ -42,18 +42,17 @@ def run(args):
 
     context.image_size = img2.size #mise à jour 
 
-    print("=== Context ===")
-    print(context)
-    
-    # Calcul du nombre maximal de copies
-    max_h, max_v = compute_max_copies((context.mire_width, context.mire_height),
-                                      (context.image_width, context.image_height),
-                                      context)
-    print(f"Max copies HxV: {max_h} x {max_v}")
-
     # Fermer images
     mire.close()
     img2.close()
+
+    print("=== Context ===")
+    print(context)
+
+    # Calcul du nombre maximal de copies
+    copies_h, copies_v = compute_max_copies(context)
+    print(f"Copies HxV: {copies_h} x {copies_v}")
+
 
 
 def main():

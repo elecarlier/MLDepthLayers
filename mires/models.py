@@ -26,7 +26,10 @@ class PrintContext:
     """Paramètres calculés à partir des settings et des images."""
     def __init__(self, settings: PrintSettings, mire: Image.Image, image: Image.Image):
 
-
+        self.cols = settings.cols
+        self.rows = settings.rows
+        self.makeshift = settings.makeshift
+        
         # DPI
         self.hdpi = settings.user_hdpi
         self.vdpi = settings.user_vdpi
