@@ -7,8 +7,14 @@ from dpi import resolve_dpi
 from images_utils import trim_image, add_border
 from layout import compute_max_copies, compute_actual_copies
 from output import compute_output_filename
+from action_image import paste_copies
 
 def run(args):
+
+    # ============================
+    # Configuration 
+    # ============================
+
     settings = PrintSettings(
         lpi=args.LPI,
         user_hdpi=args.HDPI,
@@ -56,9 +62,7 @@ def run(args):
 
     context.image_size = img2.size #mise à jour 
 
-    # Fermer images
-    mire.close()
-    img2.close()
+
 
     print("=== Context ===")
     print(context)
@@ -75,12 +79,15 @@ def run(args):
     print(f"Copies réelles HxV: {copies_h} x {copies_v}")
     print(f"Décalages par colonne (shiftlist): {shifts}")
 
-    #nommage
-
     output_filename = compute_output_filename(args, context, copies_h, copies_v)
-
+    paste_copies(mire, img2, context, copies_h, copies_v, shifts=shifts, erase=False)
+    
+    mire.save(output_filename)    
     print("Nom du fichier de sortie :", output_filename)
 
+    mire.close()
+    img2.close()
+    
 def main():
     args = parse_args()
     run(args)
