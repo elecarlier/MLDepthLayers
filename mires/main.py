@@ -20,6 +20,7 @@ from images_utils import (
     add_border,
     compute_copies,
     paste_images,
+    resolve_dpi,
 )
 from layout_utils import compute_lens_width, compute_max_copies
 
@@ -29,34 +30,32 @@ def run(args):
     #Leve la limite sur la taille des fichiers images
     Image.MAX_IMAGE_PIXELS = 2052314995
 
-    # Chargement de la mire pour connaitre dpi
+    # Chargement de la mire pour connaitre dpi (@ comment la mire peut nous donner la dpi ? )
     try:
-        mire_img = load_and_prepare_image(args.mire)
+        mire_img = load_image(args.mire)
     except FileNotFoundError:
         print(f"Mire {args.mire} non trouvée")
         sys.exit(1)
 
-    hdpi, vdpi = get_dpi(mire_img, args.HDPI, args.VDPI)
-
-    # Écrasement des DPI si renseignés
-    if args.HDPI >= 0: hdpi = args.HDPI
-    if args.VDPI >= 0: vdpi = args.VDPI
-
+    hdpi, vdpi = resolve_dpi(mire_img, args.HDPI, args.VDPI)
     print("DPI:", hdpi, vdpi)
 
+
+    #@ on renseignera surement les dpi (-> i guess pour l'imprimante??)
     LensWidthInPixels = hdpi/args.LPI #nombre réel ie pas un entier
 
     print("Largeur d'une lentille en pixels :",LensWidthInPixels)
         
     # Calcul initial du nom de fichier de sortie
+
     # Pour cela on détermine le nombre de lignes et colonnes
     
     #Valeur forcée
-    CopiesH = args.cols
-    CopiesV = args.rows
+    # CopiesH = args.cols
+    # CopiesV = args.rows
     
-    #@? c'est quoi image_centree
-    #
+    #@? c'est quoi image_centre
+    
 
     # if (args.cols == 0 or args.rows == 0) and str(args.image) != "Image_centree.tif":
     #     try:

@@ -101,3 +101,24 @@ def compute_copies(img_bg, img_fg, hdpi, lpi, forced_cols=0, forced_rows=0, make
     if forced_rows > 0:
         max_v = forced_rows
     return lens_width, max_h, max_v
+
+
+def resolve_dpi(image, user_hdpi: int, user_vdpi: int):
+    """
+    Détermine les DPI effectifs à utiliser.
+
+    Priorité :
+    1. DPI de l'image si présent
+    2. Valeurs utilisateur si image sans DPI
+    3. Écrasement explicite si utilisateur >= 0
+    """
+    
+    hdpi, vdpi = image.info.get("dpi", (user_hdpi, user_vdpi))
+
+    if user_hdpi >= 0:
+        print("ecrasemnt")
+        hdpi = user_hdpi
+    if user_vdpi >= 0:
+        vdpi = user_vdpi
+
+    return hdpi, vdpi
