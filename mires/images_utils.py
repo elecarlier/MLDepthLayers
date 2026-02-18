@@ -28,14 +28,19 @@ def get_dpi(image, default_hdpi, default_vdpi):
 
 def trim_image(img, trim_mm, context):
     """Trim l'image selon le context"""
-    if trim_mm <= 0:
-        return img
+
+    # if trim_mm <= 0:
+    #     return img
 
     # On utilise les pixels déjà calculés
     px_h = context.trim_px_h
     px_v = context.trim_px_v
 
-    w, h = img.size
+    print("Trimming", px_h,px_v,"pixels")
+
+    w, h = img.size #valeurs avant le trim
+
+    #on retur px_h à gauche et droite et px_v en haut et en bas
     return img.crop((px_h, px_v, w - px_h, h - px_v))
 
 

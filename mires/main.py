@@ -35,9 +35,15 @@ def run(args):
     print(context)
 
     # Appliquer trim et border
-    if settings.trim_mm > 0:
+    # if settings.trim_mm > 0 and settings.makeshift <= 0: 
+        
+    if settings.trim_mm > 0 and settings.makeshift <= 0:
         img2 = trim_image(img2, settings.trim_mm, context)
-    if settings.border_mm > 0:
+
+    
+    context.image_size = img2.size #mise à jour 
+    
+    if settings.border_mm > 0 and settings.makeshift <= 0:
         img2 = add_border(img2, settings.border_mm, context)
 
     context.image_size = img2.size #mise à jour 
