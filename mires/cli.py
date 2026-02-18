@@ -8,15 +8,15 @@ def parse_args():
         "-m", 
         "--mire", 
         type=Path, 
-        default="Mire 50 LPI 711x508.tif",
+        default="/Users/eleonore/MLDepthLayers/mires/mires_templates/50.png",
         help="Nom du fichier Frame"
     )
     parser.add_argument(
         "-i",
         "--image",
         type=Path,
-        default="Image_centree.tif",
-        help="Nom du fichier à insérer."
+        default="/Users/eleonore/MLDepthLayers/mires/input/sirphe.tif",
+        help="Path/Nom du fichier à insérer."
     )
     parser.add_argument(
         "-o",
@@ -35,7 +35,7 @@ def parse_args():
     parser.add_argument(
         "--LPI",
         type=float,
-        default=40.0,
+        default=50.0,
         help="Linéature apparente de la plaque (40.0 par défaut)."
     )
     parser.add_argument(
