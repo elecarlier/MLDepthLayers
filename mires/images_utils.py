@@ -26,49 +26,33 @@ def get_dpi(image, default_hdpi, default_vdpi):
 
 
 
-
 def trim_image(img, trim_mm, context):
-    px_h = context.mm_to_px_x(trim_mm)
-    px_v = context.mm_to_px_y(trim_mm)
+    """Trim l'image selon le context"""
+    if trim_mm <= 0:
+        return img
 
-    a2, b2 = img.size
-    return img.crop((px_h, px_v, a2 - px_h, b2 - px_v))
+    # On utilise les pixels déjà calculés
+    px_h = context.trim_px_h
+    px_v = context.trim_px_v
 
-
-# def trim_image(img, trim_mm, hdpi, vdpi):
-#     """
-#     Supprime une bordure en millimètres autour de l'image.
-#     """
-#     if trim_mm <= 0:
-#         return img
-
-#     px_h = int(hdpi * trim_mm / 25.4)
-#     px_v = int(vdpi * trim_mm / 25.4)
-        
-#     print("Trimming", px_h, px_v,"pixels")
-
-#     return img.crop((px_h, px_v, img.width - px_h, img.height - px_v))
-
-
-# def add_border(img, border_mm, hdpi, vdpi):
-#     """
-#     Ajoute une bordure noire autour de l'image.
-#     """
-#     if border_mm <= 0:
-#         return img
-
-#     px_h = int(hdpi * border_mm / 25.4)
-#     px_v = int(vdpi * border_mm / 25.4)
-
-#     print("Adding border of", px_h,px_v,"pixels")
-#     return ImageOps.expand(img, border=(px_h, px_v), fill=(0, 0, 0))
+    w, h = img.size
+    return img.crop((px_h, px_v, w - px_h, h - px_v))
 
 
 def add_border(img, border_mm, context):
-    px_h = context.mm_to_px_x(border_mm)
-    px_v = context.mm_to_px_y(border_mm)
+    """Ajoute un bord noir autour de l'image."""
+    if border_mm <= 0:
+        return img
 
-    return ImageOps.expand(img, border=(px_h, px_v), fill=(0, 0, 0))
+    # On utilise les pixels déjà calculés dans context
+    px_h = context.border_px_h
+    px_v = context.border_px_v
+
+    # Bord gauche/droite = px_h, haut/bas = px_v
+    return ImageOps.expand(img, border=(px_h, px_v, px_h, px_v), fill=(0, 0, 0))
+
+
+
 
 
 def load_and_prepare_image(file_path: Path, trim_mm=0, border_mm=-1, dpi=(720, 360)):

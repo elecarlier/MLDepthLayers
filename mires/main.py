@@ -23,6 +23,7 @@ def run(args):
 
     # Charger la mire et l'image
     Image.MAX_IMAGE_PIXELS = None  # éviter warning grandes images ancienne valeur 2052314995
+
     mire = Image.open(args.mire)
     img2 = Image.open(args.image)
 
@@ -39,6 +40,11 @@ def run(args):
     if settings.border_mm > 0:
         img2 = add_border(img2, settings.border_mm, context)
 
+    context.image_size = img2.size #mise à jour 
+
+    print("=== Context ===")
+    print(context)
+    
     # Calcul du nombre maximal de copies
     max_h, max_v = compute_max_copies((context.mire_width, context.mire_height),
                                       (context.image_width, context.image_height),

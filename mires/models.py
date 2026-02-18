@@ -25,6 +25,8 @@ class PrintSettings:
 class PrintContext:
     """Paramètres calculés à partir des settings et des images."""
     def __init__(self, settings: PrintSettings, mire: Image.Image, image: Image.Image):
+
+
         # DPI
         self.hdpi = settings.user_hdpi
         self.vdpi = settings.user_vdpi
@@ -37,13 +39,31 @@ class PrintContext:
         self.mire_width, self.mire_height = mire.size
 
         # Taille de l'image à insérer
-        self.image_width, self.image_height = image.size
+        self._image_size = image.size
+        # self.image_width, self.image_height = image.size
 
         # Trim et border convertis en pixels
         self.trim_px_h = int(settings.trim_mm / 25.4 * self.hdpi)
         self.trim_px_v = int(settings.trim_mm / 25.4 * self.vdpi)
         self.border_px_h = int(settings.border_mm / 25.4 * self.hdpi) if settings.border_mm > 0 else 0
         self.border_px_v = int(settings.border_mm / 25.4 * self.vdpi) if settings.border_mm > 0 else 0
+    
+    @property
+    def image_width(self):
+        return self._image_size[0]
+
+    @property
+    def image_height(self):
+        return self._image_size[1]
+
+    # Permet de mettre à jour l'image_size après trim/border
+    @property
+    def image_size(self):
+        return self._image_size
+
+    @image_size.setter
+    def image_size(self, value):
+        self._image_size = value
 
     def __repr__(self):
         return (f"PrintContext(hdpi={self.hdpi}, vdpi={self.vdpi}, lpi={self.lpi}, "
@@ -52,3 +72,5 @@ class PrintContext:
                 f"image_size=({self.image_width},{self.image_height}), "
                 f"trim_px=({self.trim_px_h},{self.trim_px_v}), "
                 f"border_px=({self.border_px_h},{self.border_px_v}))")
+    
+
