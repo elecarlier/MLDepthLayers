@@ -1,58 +1,87 @@
-#!/usr/bin/env python3
+from pathlib import Path
 from PIL import Image
-
 from cli import parse_args
 from models import PrintSettings, PrintContext
-from dpi import resolve_dpi
+from layout import compute_max_copies, compute_actual_copies
 from images_utils import trim_image, add_border
-from layout import compute_max_copies
 
+# --- Fonctions utilitaires de test ---
 
-def test_all():
-    args = parse_args()
+def run_test_case(
+    mire_path, image_path,
+    cols=0, rows=0,
+    hcopies=-1, vcopies=-1,
+    hpos=1, vpos=1,
+    tile=False,
+    makeshift=-1,
+    shiftlist=None,
+    trim=0, border=-1
+):
+    # Charger images
+    mire = Image.open(mire_path)
+    img2 = Image.open(image_path)
 
-    print("=== Test 1 : Parser ===")
-    print(args)
-
+    # Créer settings et context
     settings = PrintSettings(
-        lpi=args.LPI,
-        user_hdpi=args.HDPI,
-        user_vdpi=args.VDPI,
-        trim_mm=args.trim,
-        border_mm=args.border,
-        tile=args.tile,
-        makeshift=args.makeshift,
-        cols=args.cols,
-        rows=args.rows
+        cols=cols, rows=rows,
+        hcopies=hcopies, vcopies=vcopies,
+        hpos=hpos, vpos=vpos,
+        tile=tile, makeshift=makeshift,
+        trim_mm=trim, border_mm=border
     )
-    print("=== Test 2 : PrintSettings ===")
-    print(settings)
+    context = PrintContext(settings, mire, img2)
 
-    # Charger la mire
-    mire = Image.open(args.mire)
-    hdpi, vdpi = resolve_dpi(mire, settings.user_hdpi, settings.user_vdpi)
-    context = PrintContext(hdpi, vdpi, settings.lpi)
-    print("=== Test 3 : PrintContext ===")
-    print(f"HDPI: {context.hdpi}, VDPI: {context.vdpi}, Lens width px: {context.lens_width_px}")
+    # Appliquer trim / border
+    if trim > 0:
+        img2 = trim_image(img2, trim, context)
+        context.image_size = img2.size
 
-    # Charger image à insérer
-    img2 = Image.open(args.image)
+    if border > 0:
+        img2 = add_border(img2, border, context)
+        context.image_size = img2.size
 
-    if settings.trim_mm > 0:
-        img2_trim = trim_image(img2, settings.trim_mm, context)
-        print(f"Trimmed image size: {img2_trim.size}")
+    # Valeurs max
+    max_h, max_v = compute_max_copies(context)
 
-    if settings.border_mm > 0:
-        img2_border = add_border(img2, settings.border_mm, context)
-        print(f"Bordered image size: {img2_border.size}")
+    # Valeurs réelles
+    copies_h, copies_v, shifts = compute_actual_copies(context, max_h, max_v)
 
-    max_h, max_v = compute_max_copies(mire.size, img2.size, context)
-    print(f"=== Test 4 : Max copies HxV === {max_h} x {max_v}")
+    print(f"\n--- TEST ---")
+    print(f"Mire: {mire_path}, Image: {image_path}")
+    print(f"Max HxV: {max_h} x {max_v}")
+    print(f"Copies réelles HxV: {copies_h} x {copies_v}")
+    print(f"Décalages par colonne: {shifts}")
 
-    # Fermer les images
+    # Fermer images
     mire.close()
     img2.close()
 
 
-if __name__ == "__main__":
-    test_all()
+# --- Liste de tests ---
+tests = [
+    # Pavage normal sans contraintes
+    ("/Users/eleonore/MLDepthLayers/mires/mires_templates/50.png", "/Users/eleonore/MLDepthLayers/mires/input/sirphe.tif"),
+
+    # Pavage avec nombre de colonnes/rows forcé
+    ("/Users/eleonore/MLDepthLayers/mires/mires_templates/50.png", "/Users/eleonore/MLDepthLayers/mires/input/sirphe.tif", 5, 4),
+
+    # Pavage avec HCopies/VCopies
+    ("/Users/eleonore/MLDepthLayers/mires/mires_templates/50.png", "/Users/eleonore/MLDepthLayers/mires/input/sirphe.tif", 0, 0, 3, 2, 1, 1, True),
+
+    # Pavage avec position de départ
+    ("/Users/eleonore/MLDepthLayers/mires/mires_templates/50.png", "/Users/eleonore/MLDepthLayers/mires/input/sirphe.tif", 0, 0, 4, 3, 2, 2, True),
+
+    # Makeshift (mire de callage)
+    ("/Users/eleonore/MLDepthLayers/mires/mires_templates/50.png", "/Users/eleonore/MLDepthLayers/mires/input/sirphe.tif", 0, 0, -1, -1, 1, 1, False, 5),
+
+    # Shiftlist appliquée
+    ("/Users/eleonore/MLDepthLayers/mires/mires_templates/50.png", "/Users/eleonore/MLDepthLayers/mires/input/sirphe.tif", 0, 0, 4, 3, 1, 1, True, -1, [0,1,2,3]),
+
+    # Trim et border
+    ("/Users/eleonore/MLDepthLayers/mires/mires_templates/50.png", "/Users/eleonore/MLDepthLayers/mires/input/sirphe.tif", 0, 0, -1, -1, 1, 1, False, -1, None, 2, 1),
+]
+
+
+# --- Exécution des tests ---
+for test in tests:
+    run_test_case(*test)

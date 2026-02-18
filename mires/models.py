@@ -2,9 +2,22 @@ from PIL import Image
 
 class PrintSettings:
     """Paramètres fournis par l’utilisateur via CLI ou defaults."""
-    def __init__(self, lpi=40.0, user_hdpi=720, user_vdpi=360,
-                 trim_mm=0, border_mm=-1,
-                 tile=False, makeshift=-1, cols=0, rows=0):
+    def __init__(self,
+                 lpi=40.0,
+                 user_hdpi=720,
+                 user_vdpi=360,
+                 trim_mm=0,
+                 border_mm=-1,
+                 tile=False,
+                 makeshift=-1,
+                 cols=0,
+                 rows=0,
+                 hcopies=-1,
+                 vcopies=-1,
+                 hpos=1,
+                 vpos=1,
+                 shiftlist=(1,1),
+                 test=False):
         self.lpi = lpi
         self.user_hdpi = user_hdpi
         self.user_vdpi = user_vdpi
@@ -14,6 +27,12 @@ class PrintSettings:
         self.makeshift = makeshift
         self.cols = cols
         self.rows = rows
+        self.hcopies = hcopies
+        self.vcopies = vcopies
+        self.hpos = hpos
+        self.vpos = vpos
+        self.test = test
+        self.shiftlist = shiftlist
 
     def __repr__(self):
         return (f"PrintSettings(lpi={self.lpi}, user_hdpi={self.user_hdpi}, "
@@ -25,11 +44,16 @@ class PrintSettings:
 class PrintContext:
     """Paramètres calculés à partir des settings et des images."""
     def __init__(self, settings: PrintSettings, mire: Image.Image, image: Image.Image):
-
+        self.settings = settings 
         self.cols = settings.cols
         self.rows = settings.rows
         self.makeshift = settings.makeshift
-        
+        self.hcopies = settings.hcopies
+        self.vcopies = settings.vcopies
+        self.hpos = settings.hpos
+        self.vpos = settings.vpos
+        self.test = settings.test
+
         # DPI
         self.hdpi = settings.user_hdpi
         self.vdpi = settings.user_vdpi

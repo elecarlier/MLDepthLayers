@@ -22,14 +22,14 @@ def parse_args():
         "-o",
         "--output",
         type=Path,
-        default="Non renseigné",
+        default=None,
         help="Nom du fichier à créer. \nCalcule automatiquement un nom si non renseigné"
     )
     parser.add_argument(
         "-a",
         "--addfile",
         type=Path,
-        default="Non renseigné",
+        default=None,
         help="Nom du fichier à ajouter"
     )
     parser.add_argument(
