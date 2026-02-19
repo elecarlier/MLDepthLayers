@@ -3,12 +3,14 @@ from pathlib import Path
 from PIL import Image
 from cli import parse_args
 from models import PrintSettings, PrintContext
-from dpi import resolve_dpi
 from images_utils import trim_image, add_border
 from layout import compute_max_copies, compute_actual_copies
 from output import compute_output_filename
 from action_image import paste_copies
 from adjustment_mire import create_alignment_mire
+
+
+
 def run(args):
 
     # ============================
@@ -60,17 +62,14 @@ def run(args):
     # Mode normal
     # ============================
 
-    # Appliquer trim et border
-    # if settings.trim_mm > 0 
-
     if settings.trim_mm > 0:
-        img2 = trim_image(img2, settings.trim_mm, context)
+        img2 = trim_image(img2, context)
 
     
     context.image_size = img2.size #mise à jour 
 
     if settings.border_mm > 0:
-        img2 = add_border(img2, settings.border_mm, context)
+        img2 = add_border(img2, context)
 
     context.image_size = img2.size #mise à jour 
 
