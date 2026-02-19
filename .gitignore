@@ -15,12 +15,12 @@ checkpoints/
 # Outputs / résultats générés
 Output/
 output/
-output*
 Input*
 Output_Done*
 input_Done*
 *.png
 *.psd
+
 # Archives
 *.zip
 *.tar.gz
