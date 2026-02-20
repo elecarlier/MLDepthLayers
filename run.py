@@ -24,7 +24,9 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 import matplotlib.image as mpimg
 
+import dataclasses
 from depth_pro import create_model_and_transforms, load_rgb
+from depth_pro.depth_pro import DEFAULT_MONODEPTH_CONFIG_DICT
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,7 +47,11 @@ def run(args):
         logging.basicConfig(level=logging.INFO)
 
     # Load model.
+    # Use an absolute checkpoint path so the script works from any working directory.
+    checkpoint_path = Path(__file__).parent / "ml-Depth-Pro" / "checkpoints" / "depth_pro.pt"
+    config = dataclasses.replace(DEFAULT_MONODEPTH_CONFIG_DICT, checkpoint_uri=str(checkpoint_path))
     model, transform = create_model_and_transforms(
+        config=config,
         device=get_torch_device(),
         precision=torch.half,
     )
