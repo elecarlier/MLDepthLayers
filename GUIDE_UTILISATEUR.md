@@ -99,19 +99,51 @@ cd chemin/vers/MLDepthLayers
 
 ---
 
+## Comprendre les environnements Python
+
+> Lisez cette section avant d'installer — elle explique les erreurs les plus fréquentes.
+
+### C'est quoi un "environnement" ?
+
+Python a besoin d'un **environnement isolé** pour fonctionner : une boîte qui contient Python et toutes les bibliothèques nécessaires au projet, sans interférer avec d'autres projets.
+
+Il existe deux systèmes pour ça, et ils sont **incompatibles entre eux** :
+
+| | Environnement Conda | Environnement Python (venv) |
+|---|---|---|
+| Créé avec | `conda env create -f environment.yml` | `python -m venv .venv` |
+| Activé avec | `conda activate ml-depth-pro` | `source .venv/bin/activate` |
+| Stocké | dans `~/anaconda3/envs/` (hors du projet) | dans un dossier `.venv/` local |
+| Visible dans le terminal | `(ml-depth-pro) $` | `(.venv) $` |
+
+**Ce projet utilise uniquement Conda.** Ne créez pas d'environnement venv (`.venv`) dans le projet — ce serait un environnement séparé dans lequel `depth_pro` ne serait pas installé, et le programme ne fonctionnerait pas.
+
+### Comment savoir dans quel environnement on est ?
+
+```bash
+which python
+```
+
+- Contient `anaconda3/envs/ml-depth-pro` → vous êtes dans le bon environnement
+- Contient `.venv`, `venv`, ou `/usr/bin/python` → mauvais environnement, relancez `conda activate ml-depth-pro`
+
+---
+
 ## Installation
 
 Cette étape ne se fait **qu'une seule fois**.
 
-### Étape 1 — Créer l'environnement Python
+### Étape 1 — Créer et configurer l'environnement conda
 
-Placez-vous dans le dossier `ml-depth-pro` à l'intérieur du projet :
+> Les commandes doivent être lancées dans un ordre précis, et depuis le bon dossier. Ne sautez pas d'étape.
+
+**1. Allez dans le sous-dossier `ml-Depth-Pro/`** (celui qui contient `pyproject.toml` et `environment.yml`) :
 
 ```bash
-cd ml-depth-pro
+cd ml-Depth-Pro
 ```
 
-Créez l'environnement Conda avec toutes les dépendances :
+**2. Créez l'environnement conda** avec toutes les dépendances :
 
 ```bash
 conda env create -f environment.yml
@@ -119,21 +151,30 @@ conda env create -f environment.yml
 
 > Cette commande peut prendre quelques minutes selon votre connexion internet.
 
-Activez l'environnement :
+**3. Activez l'environnement** :
 
 ```bash
 conda activate ml-depth-pro
 ```
 
-> Vous verrez `(ml-depth-pro)` apparaître au début de votre ligne de commande. C'est normal, ça signifie que l'environnement est actif.
+> Vous verrez `(ml-depth-pro)` apparaître au début de votre ligne de commande.
 
-Installez le package Python du modèle :
+**4. Vérifiez que vous êtes dans le bon Python** avant de continuer :
+
+```bash
+which python
+# Doit afficher : .../anaconda3/envs/ml-depth-pro/bin/python
+```
+
+**5. Installez le package du modèle** — toujours depuis `ml-Depth-Pro/` :
 
 ```bash
 pip install -e .
 ```
 
-Vérification :
+> Si vous obtenez `error: Not a Python project` : vous n'êtes pas dans le bon dossier. Vérifiez avec `pwd` que vous êtes bien dans `ml-Depth-Pro/`.
+
+**6. Vérifiez que l'installation a fonctionné** :
 
 ```bash
 python -c "import depth_pro; print(depth_pro.__name__)"
@@ -141,7 +182,7 @@ python -c "import depth_pro; print(depth_pro.__name__)"
 
 Si `depth_pro` s'affiche → ✅ tout est OK
 
-> En cas d'erreur `No module named depth_pro`, réessayez : `conda activate ml-depth-pro`, puis `pip install -e .`
+> Si vous obtenez `No module named depth_pro` : l'environnement actif n'est pas le bon, ou `pip install -e .` a été lancé depuis le mauvais dossier. Reprenez depuis l'étape 3.
 
 ### Étape 2 — Télécharger le modèle d'IA
 
@@ -253,10 +294,46 @@ Vous pouvez aussi ajouter `-c` à votre commande de lancement pour que le nettoy
 
 ## En cas de problème
 
-| Problème | Solution |
-|----------|----------|
-| `conda: command not found` | Fermez et rouvrez le terminal après avoir installé Anaconda |
-| `No module named depth_pro` | Lancez `conda activate ml-depth-pro`, puis `pip install -e .` depuis `ml-depth-pro/` |
-| `Fichier introuvable` | Vérifiez que le chemin vers votre PSD est correct et que l'extension est bien `.psd` |
-| `Aucun layer extrait du PSD` | Vérifiez que vos calques sont bien visibles (non masqués) dans Photoshop |
-| Le programme est très lent | C'est normal — le modèle d'IA traite chaque calque séparément, comptez quelques minutes par calque |
+### Tableau récapitulatif
+
+| Message d'erreur | Cause probable | Solution |
+|---|---|---|
+| `conda: command not found` | Anaconda non initialisé | Fermez et rouvrez le terminal |
+| `No module named depth_pro` | Mauvais environnement actif, ou `pip install -e .` mal lancé | Voir procédure détaillée ci-dessous |
+| `error: Not a Python project` | `pip install -e .` lancé depuis la racine du projet | Aller dans `ml-Depth-Pro/` avant de relancer |
+| `Fichier introuvable` | Chemin vers le PSD incorrect | Vérifiez le chemin et que l'extension est bien `.psd` |
+| `Aucun layer extrait du PSD` | Calques masqués ou vides dans Photoshop | Vérifiez que les calques sont visibles dans Photoshop |
+| Le programme est très lent | Normal | Le modèle traite chaque calque séparément — comptez quelques minutes par calque |
+
+---
+
+### `No module named depth_pro` — procédure complète
+
+C'est l'erreur la plus courante. Suivez ces étapes dans l'ordre :
+
+```bash
+# 1. Désactivez un éventuel venv local s'il est actif
+deactivate 2>/dev/null; true
+
+# 2. Activez le conda env
+conda activate ml-depth-pro
+
+# 3. Vérifiez que c'est le bon Python
+which python
+# Doit afficher : .../anaconda3/envs/ml-depth-pro/bin/python
+
+# 4. Allez dans le bon dossier
+cd /chemin/vers/MLDepthLayers/ml-Depth-Pro
+
+# 5. Réinstallez le package
+pip install -e .
+
+# 6. Vérifiez
+python -c "import depth_pro; print('OK')"
+
+# 7. Revenez à la racine
+cd ..
+
+# 8. Relancez
+python launcher.py chemin/vers/fichier.psd
+```
