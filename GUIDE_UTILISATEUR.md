@@ -241,6 +241,33 @@ python launcher.py /Users/eleonore/Photos/portrait_lenticulaire.psd
 | `-v` ou `--verbose` | Affiche les détails de chaque étape pendant l'exécution |
 | `-s` ou `--side` | Génère une image combinée (photo originale + carte de profondeur côte à côte) |
 | `-c` ou `--cleanup` | Vide les dossiers temporaires avant de commencer |
+| `--model depthpro` | Utilise Apple ML Depth Pro (défaut) |
+| `--model midas` | Utilise MiDaS à la place de Depth Pro |
+| `--midas-type` | Choisit la variante MiDaS (voir tableau ci-dessous) |
+
+### Choisir le modèle d'IA
+
+Par défaut, le programme utilise **Apple ML Depth Pro**. Vous pouvez aussi utiliser **MiDaS**, un autre modèle de depth estimation développé par Intel :
+
+```bash
+# Avec MiDaS (variante par défaut : dpt_hybrid_384)
+python launcher.py --model midas chemin/vers/fichier.psd
+
+# Avec une variante MiDaS spécifique
+python launcher.py --model midas --midas-type dpt_large_384 chemin/vers/fichier.psd
+```
+
+**Variantes MiDaS disponibles :**
+
+| Variante | Qualité | Vitesse |
+|----------|---------|---------|
+| `dpt_hybrid_384` | Bonne (défaut) | Rapide |
+| `dpt_large_384` | Très bonne | Moyenne |
+| `dpt_beit_large_512` | Excellente | Lente |
+| `dpt_swin2_large_384` | Très bonne | Moyenne |
+| `midas_v21_384` | Correcte | Très rapide |
+
+> **Note :** Depth Pro et MiDaS produisent des résultats différents. Depth Pro est calibré métriquement (profondeur réelle en mètres) ; MiDaS produit une profondeur relative. Les deux peuvent donner de bons résultats selon le type d'image — n'hésitez pas à comparer.
 
 **Exemples :**
 
@@ -250,6 +277,9 @@ python launcher.py -v -s chemin/vers/fichier.psd
 
 # Tout réinitialiser avant de traiter un nouveau fichier
 python launcher.py -c chemin/vers/fichier.psd
+
+# MiDaS avec nettoyage préalable
+python launcher.py -c --model midas chemin/vers/fichier.psd
 ```
 
 > **Important :** L'environnement `ml-depth-pro` doit être actif avant de lancer le programme. Si vous avez fermé le terminal depuis l'installation, relancez :
@@ -266,9 +296,13 @@ Une fois le programme terminé, deux nouveaux dossiers apparaissent **dans le m�
 ```
 dossier_de_votre_psd/
 ├── votre_fichier.psd
-├── global_map/          ← masques appliqués sur la carte de profondeur globale
-└── layers_map/          ← cartes de profondeur calculées calque par calque
+├── global_map_depthpro/    ← profondeur globale (Depth Pro), découpée par calque
+├── layers_map_depthpro/    ← profondeur par calque (Depth Pro)
+├── global_map_midas/       ← profondeur globale (MiDaS), découpée par calque
+└── layers_map_midas/       ← profondeur par calque (MiDaS)
 ```
+
+Chaque modèle écrit dans ses propres dossiers : vous pouvez lancer les deux successivement sans risque d'écrasement.
 
 Ces deux dossiers contiennent chacun une image par calque, avec fond transparent. Mais leur contenu est différent — et c'est là tout l'intérêt :
 
@@ -303,7 +337,8 @@ Vous pouvez aussi ajouter `-c` à votre commande de lancement pour que le nettoy
 | `error: Not a Python project` | `pip install -e .` lancé depuis la racine du projet | Aller dans `ml-Depth-Pro/` avant de relancer |
 | `Fichier introuvable` | Chemin vers le PSD incorrect | Vérifiez le chemin et que l'extension est bien `.psd` |
 | `Aucun layer extrait du PSD` | Calques masqués ou vides dans Photoshop | Vérifiez que les calques sont visibles dans Photoshop |
-| Le programme est très lent | Normal | Le modèle traite chaque calque séparément — comptez quelques minutes par calque |
+| Le programme est très lent | Normal | Depth Pro traite chaque calque séparément — comptez quelques minutes par calque. MiDaS est plus rapide. |
+| `midas-py310` actif au lieu de `ml-depth-pro` | Mauvais environnement | Lancez `conda activate ml-depth-pro` |
 
 ---
 

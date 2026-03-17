@@ -78,11 +78,12 @@ def export_final_folders(
     psd_path,
     isolated_global_dir="output/isolated_global",
     isolated_layers_dir="output/isolated_layers",
+    model="depthpro",
 ):
     """
     Crée deux dossiers dans le dossier du PSD :
-        - global_map/
-        - layers_map/
+        - global_map_<model>/
+        - layers_map_<model>/
 
     Et copie les fichiers isolés en les renommant proprement.
     """
@@ -90,8 +91,8 @@ def export_final_folders(
     psd_path = Path(psd_path)
     base_dir = psd_path.parent
 
-    global_dir = base_dir / "global_map"
-    layers_dir = base_dir / "layers_map"
+    global_dir = base_dir / f"global_map_{model}"
+    layers_dir = base_dir / f"layers_map_{model}"
 
     global_dir.mkdir(exist_ok=True)
     layers_dir.mkdir(exist_ok=True)

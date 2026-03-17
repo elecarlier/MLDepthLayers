@@ -107,6 +107,18 @@ def parse_arguments():
         action="store_true",
         help="Nettoyer les dossiers input/output avant de commencer"
     )
+    parser.add_argument(
+        "--model",
+        choices=["depthpro", "midas"],
+        default="depthpro",
+        help="Modèle de depth estimation : depthpro (défaut) ou midas."
+    )
+    parser.add_argument(
+        "--midas-type",
+        choices=["dpt_beit_large_512", "dpt_hybrid_384", "dpt_large_384", "dpt_swin2_large_384", "midas_v21_384"],
+        default="dpt_hybrid_384",
+        help="Variante MiDaS (utilisé seulement si --model midas)."
+    )
 
     return parser.parse_args()
 
@@ -183,19 +195,29 @@ Pour chaque layer PNG :
 - run.py génère une depth map correspondante
 """
 
-def generate_depth_maps(image_paths):
-    logger.info("Génération des cartes de profondeur...")
+def generate_depth_maps(image_paths, model="depthpro", midas_type="dpt_hybrid_384"):
+    logger.info(f"Génération des cartes de profondeur ({model})...")
 
-    for image_path in image_paths:
-        logger.info(f"Processing {image_path.name}")
-
-        subprocess.run([
-            sys.executable,
-            "run.py",
-            "-i", str(image_path),
+    if model == "midas":
+        # MiDaS : un seul appel avec tout le dossier (modèle chargé une seule fois)
+        cmd = [
+            sys.executable, "run_midas.py",
+            "-i", str(existing_layers_folder),
             "-o", str(output_folder),
-            "--skip-display"
-        ], check=True)
+            "--skip-display",
+            "--midas-type", midas_type,
+        ]
+        subprocess.run(cmd, check=True)
+    else:
+        # Depth Pro : un appel par image
+        for image_path in image_paths:
+            logger.info(f"Processing {image_path.name}")
+            subprocess.run([
+                sys.executable, "run.py",
+                "-i", str(image_path),
+                "-o", str(output_folder),
+                "--skip-display"
+            ], check=True)
 
     logger.info("Cartes de profondeur générées.")
 
@@ -229,18 +251,23 @@ On génère une image combinée (original + depth map)
 pour l'image globale uniquement.
 """
 
-def generate_side_by_side(global_image: Path, final_folder: Path):
+def generate_side_by_side(global_image: Path, final_folder: Path, model="depthpro", midas_type="dpt_beit_large_512"):
     logger.info("Génération side-by-side pour la photo globale")
 
-    subprocess.run([
+    script = "run.py" if model == "depthpro" else "run_midas.py"
+
+    cmd = [
         sys.executable,
-        "run.py",
+        script,
         "-i", str(global_image),
         "-o", str(final_folder),
         "-s",
         "--skip-display"
-    ], check=True)
+    ]
+    if model == "midas":
+        cmd += ["--midas-type", midas_type]
 
+    subprocess.run(cmd, check=True)
     logger.info("Side-by-side généré.")
 
 
@@ -253,13 +280,14 @@ def generate_side_by_side(global_image: Path, final_folder: Path):
 On organise les résultats finaux dans une structure propre
 à côté du PSD original.
 """
-def export_results(psd_path: Path):
+def export_results(psd_path: Path, model: str = "depthpro"):
     logger.info("Création des dossiers finaux...")
 
     export_final_folders(
         psd_path=psd_path,
         isolated_global_dir="output/isolated_global",
         isolated_layers_dir="output/isolated_layers",
+        model=model,
     )
 
     logger.info("Dossiers finaux prêts.")
@@ -307,11 +335,11 @@ def main():
 
     image_paths, global_image = extract_layers(psd_path)
     generate_masks()
-    generate_depth_maps(image_paths)
+    generate_depth_maps(image_paths, model=args.model, midas_type=args.midas_type)
     isolate_layers()
 
     if do_side_by_side:
-        generate_side_by_side(global_image, final_folder)
+        generate_side_by_side(global_image, final_folder, model=args.model, midas_type=args.midas_type)
     else:
         logger.warning("Side-by-side non généré (pas d'argument -s)")
 
@@ -319,7 +347,7 @@ def main():
     isolate_from_masks()
     logger.info("Cartes de profondeur isolées générées.")
 
-    export_results(psd_path)
+    export_results(psd_path, model=args.model)
 
     logger.info("Pipeline terminé avec succès.")
 
